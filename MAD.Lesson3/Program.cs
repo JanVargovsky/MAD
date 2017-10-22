@@ -1,6 +1,5 @@
 ﻿using MoreLinq;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,80 +7,149 @@ using System.Threading.Tasks;
 
 namespace MAD.Lesson3
 {
-    class Program
+    public class Program
     {
-        public class Edge
+        async Task<int[,]> LoadMatrixAsync(string file, int size)
         {
-            public int From { get; set; }
-            public int To { get; set; }
-        }
+            var matrix = new int[size, size];
 
-        async Task<IEnumerable<Edge>> ParseCsvAsync(string file)
-        {
             var lines = await File.ReadAllLinesAsync(file);
-            Edge Parse(string line)
+            foreach (var line in lines)
             {
                 var tokens = line.Split(';');
-                return new Edge
-                {
-                    From = int.Parse(tokens[0]),
-                    To = int.Parse(tokens[1]),
-                };
+                var from = int.Parse(tokens[0]);
+                var to = int.Parse(tokens[1]);
+
+                matrix[from, to] = matrix[to, from] = 1;
             }
-            return lines.Select(Parse);
+
+            return matrix;
         }
 
-        bool[,] ToIncidenceMatrix(IEnumerable<Edge> edges, int count)
+        int[,] FloydWarshall(int[,] inputMatrix)
         {
-            var result = new bool[count, count];
-            edges.ForEach(t => result[t.From, t.To] = true);
+            int length = inputMatrix.GetLength(0);
+            var matrix = new int[length, length];
+
+            for (int i = 1; i < length; i++)
+                for (int j = 1; j < length; j++)
+                    matrix[i, j] = inputMatrix[i, j] != 0 ? inputMatrix[i, j] : 10000;
+
+            for (int k = 1; k < length; k++)
+                for (int i = 1; i < length; i++)
+                    for (int j = 1; j < length; j++)
+                    {
+                        long newLength = matrix[i, k] + (long)matrix[k, j];
+                        if (matrix[i, j] > newLength)
+                        {
+                            //Console.WriteLine($"[{i},{j}] New distance from {matrix[i, j]} to {newLength}");
+                            matrix[i, j] = (int)newLength;
+                        }
+                    }
+
+            return matrix;
+        }
+
+        double AverageDistance(int[,] matrix)
+        {
+            int length = matrix.GetLength(0);
+            double total = 0;
+            for (int i = 1; i < length; i++)
+                for (int j = i + 1; j < length; j++)
+                    total += matrix[i, j];
+
+            var nodesCount = length - 1;
+            var result = 2d / (nodesCount * (nodesCount - 1)) * total;
             return result;
         }
 
-        int[] ToHistogram(bool[,] incidenceMatrix)
+        int Average(int[,] matrix)
         {
-            var result = new int[incidenceMatrix.GetLength(0)];
-            for (int i = 0; i < incidenceMatrix.GetLength(0); i++)
-            {
-                for (int j = 0; j < incidenceMatrix.GetLength(1); j++)
+            int length = matrix.GetLength(0);
+            int result = 0;
+            for (int i = 1; i < length; i++)
+                for (int j = i + 1; j < length; j++)
+                    if (matrix[i, j] > result)
+                        result = matrix[i, j];
+
+            return result;
+        }
+
+        (int Value, int Frequency, double Percentage)[] Frequency(int[,] matrix)
+        {
+            var frequency = new Dictionary<int, int>();
+            int length = matrix.GetLength(0);
+
+            for (int i = 1; i < length; i++)
+                for (int j = i + 1; j < length; j++)
                 {
-                    if (incidenceMatrix[i, j])
-                        result[i]++;
+                    int value = matrix[i, j];
+                    if (frequency.ContainsKey(value))
+                        frequency[value]++;
+                    else
+                        frequency[value] = 1;
                 }
+
+            double total = frequency.Values.Sum();
+            return frequency
+                .OrderBy(t => t.Key)
+                .Select(t => (t.Key, t.Value, t.Value / total * 100))
+                .ToArray();
+        }
+
+        double[] ClosenessCentrality(int[,] matrix)
+        {
+            var size = matrix.GetLength(0);
+            var result = new double[size];
+            int n = size - 1;
+            for (int i = 1; i < size; i++)
+            {
+                for (int j = 1; j < size; j++)
+                    if (i != j)
+                        result[i] += matrix[i, j];
+
+                result[i] = n / result[i];
             }
             return result;
         }
 
-        static async Task Main(string[] args)
+        public void WriteAll(int[,] incidenceMatrix)
         {
-            string FileName = Path.Combine(Environment.CurrentDirectory, "KarateClub.csv");
+            var floydMatrix = FloydWarshall(incidenceMatrix);
+
+            Console.WriteLine($"Prumerna vzdalenost: {AverageDistance(floydMatrix)}");
+            Console.WriteLine($"Prumer: {Average(floydMatrix)}");
+
+            Console.WriteLine("Četnost");
+            var frequency = Frequency(floydMatrix);
+            foreach (var f in frequency)
+                Console.WriteLine($"{f.Value}={f.Frequency} ({f.Percentage:n2}%)");
+
+            Console.WriteLine("Closeness centrality");
+            var closenessCentrality = ClosenessCentrality(floydMatrix);
+            for (int i = 1; i < closenessCentrality.Length; i++)
+                Console.WriteLine($"{i}={closenessCentrality[i]:n4}");
+        }
+
+        async static Task Main(string[] args)
+        {
+            const string Filename = "KarateClub.csv";
             var p = new Program();
-            var edges = await p.ParseCsvAsync(FileName);
+            var matrix = await p.LoadMatrixAsync(Filename, 34 + 1);
+            var floydMatrix = p.FloydWarshall(matrix);
 
-            Dictionary<int, int> degrees = new Dictionary<int, int>();
-            edges.ForEach(t =>
-            {
-                degrees[t.From] = 0;
-                degrees[t.To] = 0;
-            });
+            Console.WriteLine($"Prumerna vzdalenost: {p.AverageDistance(floydMatrix)}");
+            Console.WriteLine($"Prumer: {p.Average(floydMatrix)}");
 
-            var matrix = p.ToIncidenceMatrix(edges, degrees.Count + 1);
+            Console.WriteLine("Četnost");
+            var frequency = p.Frequency(floydMatrix);
+            foreach (var f in frequency)
+                Console.WriteLine($"{f.Value}={f.Frequency} ({f.Percentage:n2}%)");
 
-            foreach (var edge in edges)
-            {
-                degrees[edge.From]++;
-                degrees[edge.To]++;
-            }
-
-            var minDegree = degrees.MinBy(t => t.Value);
-            var maxDegree = degrees.MaxBy(t => t.Value);
-            var averageDegree = degrees.Average(t => t.Value);
-            Console.WriteLine($"Min degree: id={minDegree.Key}, degree={minDegree.Value}");
-            Console.WriteLine($"Max degree: id={maxDegree.Key}, degree={maxDegree.Value}");
-            Console.WriteLine($"Average degree: {averageDegree:F2}");
-            Console.WriteLine($"Histogram: ");
-            var histogram = p.ToHistogram(matrix);
-            Console.WriteLine(string.Join(Environment.NewLine, histogram.Select((t,i) => $"{i}={t}")));
+            Console.WriteLine("Closeness centrality");
+            var closenessCentrality = p.ClosenessCentrality(floydMatrix);
+            for (int i = 1; i < closenessCentrality.Length; i++)
+                Console.WriteLine($"{i}={closenessCentrality[i]:n4}");
         }
     }
 }
