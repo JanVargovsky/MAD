@@ -111,16 +111,18 @@ namespace MAD.Lesson4
             for (int i = 1; i < clusterAnalysis.Length; i++)
                 Console.WriteLine($"{i} = {clusterAnalysis[i]:n3}");
 
+            foreach (var prob in new[] { 0.3f, 0.5f, 0.7f })
+            {
+                Console.Write(new string('=', Console.WindowWidth));
+                Console.WriteLine($"Nahodny graf (p={prob}):");
+                Console.Write(new string('=', Console.WindowWidth));
+                var randomGraph = p.GenerateGraph(35, prob);
+                //p.ExportGraph(randomGraph, $"{nameof(randomGraph)}.csv");
 
-            Console.Write(new string('=', Console.WindowWidth));
-            Console.WriteLine("Nahodny graf:");
-            Console.Write(new string('=', Console.WindowWidth));
-            var randomGraph = p.GenerateGraph(35, 0.5f);
-            //p.ExportGraph(randomGraph, $"{nameof(randomGraph)}.csv");
-
-            new Lesson2.Program().WriteAll(randomGraph);
-            new Lesson3.Program().WriteAll(randomGraph);
-            p.WriteAll(randomGraph);
+                new Lesson2.Program().WriteAll(randomGraph);
+                new Lesson3.Program().WriteAll(randomGraph);
+                p.WriteAll(randomGraph);
+            }
         }
     }
 }
