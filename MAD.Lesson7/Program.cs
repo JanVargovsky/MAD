@@ -51,6 +51,23 @@ namespace MAD.Lesson7
                 Centroid = centroid;
                 Data = new List<T>();
             }
+
+            public Cluster(T centroid, List<T> data)
+            {
+                Centroid = centroid;
+                Data = data;
+            }
+        }
+
+        class FinalCluster<T> : Cluster<T>
+        {
+            public float Error { get; }
+
+            public FinalCluster(T centroid, List<T> data, float error)
+                : base(centroid, data)
+            {
+                Error = error;
+            }
         }
 
         IrisData Mean(IEnumerable<IrisData> data) => new IrisData
@@ -74,7 +91,7 @@ namespace MAD.Lesson7
             return (float)Math.Sqrt(attributeSelector.Sum(t => Math.Pow(t(a) - t(b), 2)));
         }
 
-        IEnumerable<Cluster<IrisData>> KMeansClustering(ICollection<IrisData> data, int k)
+        IEnumerable<FinalCluster<IrisData>> KMeansClustering(ICollection<IrisData> data, int k)
         {
             var irisVectorFuncs = new Func<IrisData, float>[]
             {
@@ -116,16 +133,22 @@ namespace MAD.Lesson7
                 clusters = newClusters;
             } while (nonEqual);
 
-            return clusters.OrderByDescending(t => t.Data.Count);
+            return clusters
+                .OrderBy(t => t.Data.Count)
+                .Select(t => new FinalCluster<IrisData>(t.Centroid, t.Data, ClusterError(t, irisVectorFuncs)));
         }
 
-        void PrintClusters(IEnumerable<Cluster<IrisData>> clusters)
+        float ClusterError(Cluster<IrisData> cluster, Func<IrisData, float>[] attributeSelectors) =>
+            cluster.Data.Average(t => EuclideanDistance(t, cluster.Centroid, attributeSelectors));
+
+        void PrintClusters(IEnumerable<FinalCluster<IrisData>> clusters)
         {
             string IrisDataToString(IrisData d) => $"[{d.PetalLength}, {d.PetalWidth}, {d.SepalLength}, {d.SepalWidth}]";
-            string ClusterToString(Cluster<IrisData> d) => $"Count={d.Data.Count}, Centroid={IrisDataToString(d.Centroid)}";
+            string ClusterToString(FinalCluster<IrisData> d) => $"Count={d.Data.Count}, Centroid={IrisDataToString(d.Centroid)}, Error={d.Error:n3}";
 
             Console.WriteLine($"k={clusters.Count()}");
             clusters.ForEach(c => Console.WriteLine(ClusterToString(c)));
+            Console.WriteLine($"Total error={clusters.Average(t => t.Error)}");
             Console.WriteLine();
         }
 
