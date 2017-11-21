@@ -120,7 +120,7 @@ namespace MAD.Lesson8
                 if (result == data[i].Play)
                     bayesSuccess++;
                 else
-                    Console.WriteLine($"i={i} is predicted wrong");
+                    Console.WriteLine($"i={i} ({data[i].Outlook} {data[i].Temperature} {data[i].Humidity} {data[i].Windy} {data[i].Play}) is predicted wrong");
             }
             return bayesSuccess / (float)data.Count;
         }
