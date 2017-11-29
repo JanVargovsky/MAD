@@ -85,7 +85,6 @@ namespace MAD.Lesson8
             return data;
         }
 
-
         Play NaiveBayes(ICollection<GolfData> data, GolfData instance)
         {
             int yes = 0, no = 0;
@@ -120,7 +119,7 @@ namespace MAD.Lesson8
                 if (result == data[i].Play)
                     bayesSuccess++;
                 else
-                    Console.WriteLine($"i={i} ({data[i].Outlook} {data[i].Temperature} {data[i].Humidity} {data[i].Windy} {data[i].Play}) is predicted wrong");
+                    Console.WriteLine($"i={i} ({data[i].Outlook} {data[i].Temperature} {data[i].Humidity} {data[i].Windy} {data[i].Play}) is predicted wrong ({result})");
             }
             return bayesSuccess / (float)data.Count;
         }

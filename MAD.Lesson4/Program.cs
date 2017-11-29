@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace MAD.Lesson4
 {
-    class Program
+    public class Program
     {
         async Task<int[,]> LoadMatrixAsync(string file, int size)
         {
