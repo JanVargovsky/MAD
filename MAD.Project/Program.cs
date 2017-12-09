@@ -7,6 +7,39 @@ using System.Threading.Tasks;
 
 namespace MAD.Project
 {
+    public enum Shape
+    {
+        unknown,
+        cylinder,
+        light,
+        circle,
+        sphere,
+        disk,
+        fireball,
+        oval,
+        cigar,
+        rectangle,
+        chevron,
+        triangle,
+        formation,
+        delta,
+        changing,
+        egg,
+        diamond,
+        flash,
+        teardrop,
+        cone,
+        cross,
+        pyramid,
+        round,
+        crescent,
+        flare,
+        hexagon,
+        dome,
+        changed,
+        other,
+    }
+
     public class UFORecord
     {
         public DateTime DateTime { get; set; }
@@ -14,6 +47,7 @@ namespace MAD.Project
         public string StateOrProvince { get; set; }
         public string Country { get; set; }
         public string Shape { get; set; }
+        public Shape? ShapeEnum { get; set; }
         public float Length { get; set; } // in sec
         public string DescribedLength { get; set; }
         public string Description { get; set; }
@@ -68,6 +102,7 @@ namespace MAD.Project
                     var length = float.Parse(tokens[5], NumberStyles.Any, ci);
                     var latitude = float.Parse(tokens[9], NumberStyles.Any, ci);
                     var longitude = float.Parse(tokens[10], NumberStyles.Any, ci);
+                    Enum.TryParse<Shape>(tokens[4], out var shape);
 
                     return new UFORecord
                     {
@@ -76,6 +111,7 @@ namespace MAD.Project
                         StateOrProvince = tokens[2],
                         Country = tokens[3],
                         Shape = tokens[4],
+                        ShapeEnum = shape,
                         Length = length,
                         DescribedLength = tokens[6],
                         Description = tokens[7],
