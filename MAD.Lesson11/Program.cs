@@ -156,13 +156,20 @@ namespace MAD.Lesson11
                 //Console.WriteLine("Chars matrix");
                 //p.PrintMatrix(charsMatrix);
 
+                void WriteInfo(int[,] matrix, string name)
+                {
+                    Console.WriteLine(name);
+                    p.PrintMatrix(matrix);
+                    new Lesson2.Program().WriteAll(matrix, 0);
+                    new Lesson3.Program().WriteAll(matrix, 0);
+                    new Lesson4.Program().WriteAll(matrix, 0);
+                }
+
                 var (actors, movies, edges) = await p.LoadActorsAndMoviesAsync(Filename);
                 var actorsMatrix = p.ToMatrix(edges, actors.Count, e => e.From - 1, e => e.To);
                 var moviesMatrix = p.ToMatrix(edges, movies.Count, e => e.To - actors.Count - 1, e => e.From);
-                Console.WriteLine("Actors matrix");
-                p.PrintMatrix(actorsMatrix);
-                Console.WriteLine("Movies matrix");
-                p.PrintMatrix(moviesMatrix);
+                WriteInfo(actorsMatrix, "Actors matrix");
+                WriteInfo(moviesMatrix, "Movies matrix");
             }
             catch (Exception ex)
             {

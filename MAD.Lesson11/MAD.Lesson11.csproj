@@ -9,4 +9,10 @@
     <LangVersion>7.1</LangVersion>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\MAD.Lesson2\MAD.Lesson2.csproj" />
+    <ProjectReference Include="..\MAD.Lesson3\MAD.Lesson3.csproj" />
+    <ProjectReference Include="..\MAD.Lesson4\MAD.Lesson4.csproj" />
+  </ItemGroup>
+
 </Project>
