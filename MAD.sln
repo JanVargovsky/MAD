@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2006
+VisualStudioVersion = 15.0.27004.2010
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MAD.Lesson2", "MAD.Lesson2\MAD.Lesson2.csproj", "{852044AF-0C33-44D2-AD2C-0FB04285306F}"
 EndProject
@@ -19,7 +19,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MAD.Lesson8", "MAD.Lesson8\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MAD.Lesson9", "MAD.Lesson9\MAD.Lesson9.csproj", "{DF2F53B9-CBBD-4DA1-8056-8FD9229C0234}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MAD.Lesson10", "MAD.Lesson10\MAD.Lesson10.csproj", "{D64F503D-891C-463E-ABB0-6C99E646FC0D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MAD.Lesson10", "MAD.Lesson10\MAD.Lesson10.csproj", "{D64F503D-891C-463E-ABB0-6C99E646FC0D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MAD.Lesson11", "MAD.Lesson11\MAD.Lesson11.csproj", "{B1FD71EB-877A-42DE-97AD-C65F8815F550}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -63,6 +65,10 @@ Global
 		{D64F503D-891C-463E-ABB0-6C99E646FC0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D64F503D-891C-463E-ABB0-6C99E646FC0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D64F503D-891C-463E-ABB0-6C99E646FC0D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B1FD71EB-877A-42DE-97AD-C65F8815F550}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1FD71EB-877A-42DE-97AD-C65F8815F550}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1FD71EB-877A-42DE-97AD-C65F8815F550}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1FD71EB-877A-42DE-97AD-C65F8815F550}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
