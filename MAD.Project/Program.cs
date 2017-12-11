@@ -42,6 +42,7 @@ namespace MAD.Project
 
     public class UFORecord
     {
+        public int Id { get; set; }
         public DateTime DateTime { get; set; }
         public string City { get; set; }
         public string StateOrProvince { get; set; }
@@ -106,6 +107,7 @@ namespace MAD.Project
 
                     return new UFORecord
                     {
+                        Id = result.Count,
                         DateTime = datetime,
                         City = tokens[1],
                         StateOrProvince = tokens[2],
@@ -143,6 +145,11 @@ namespace MAD.Project
         {
             var p = new Program();
             var records = await p.LoadAsync(Filename);
+
+            var shapeNaiveBayes = new ShapeNaiveBayes();
+            var shapeLeaveOneOutCrossValidation = new ShapeLeaveOneOutCrossValidation();
+            var predictionSuccess = shapeLeaveOneOutCrossValidation.Validate(shapeNaiveBayes, records, 20);
+            Console.WriteLine($"Prediction success: {predictionSuccess * 100}%");
         }
     }
 }
