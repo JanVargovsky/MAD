@@ -61,95 +61,46 @@ namespace MAD.Project
     {
         const string Filename = "ufo_sighting_data.csv";
 
-        async Task<List<UFORecord>> LoadAsync(string filename)
-        {
-            var result = new List<UFORecord>();
-
-            using (var sr = new StreamReader(filename))
-            {
-                // skip header
-                await sr.ReadLineAsync();
-
-                var ci = (CultureInfo)CultureInfo.CurrentCulture.Clone();
-                ci.NumberFormat.CurrencyDecimalSeparator = ".";
-
-                UFORecord ParseLine(string l)
-                {
-                    var tokens = l.Split(',');
-
-                    DateTime ParseDateTime(string token)
-                    {
-                        var parts = token.Split(' ');
-                        var date = parts[0].Split('/').Select(int.Parse).ToArray();
-                        var time = parts[1].Split(':').Select(int.Parse).ToArray();
-
-                        if (time[0] == 24)
-                        {
-                            time[0] = 23;
-                            time[1] = 59;
-                        }
-
-                        return new DateTime(date[2], date[0], date[1], time[0], time[1], 0, DateTimeKind.Utc);
-                    }
-
-                    DateTime ParseDateDocumented(string token)
-                    {
-                        var date = token.Split('/').Select(int.Parse).ToArray();
-                        return new DateTime(date[2], date[0], date[1], 0, 0, 0, DateTimeKind.Utc);
-                    }
-
-                    var datetime = ParseDateTime(tokens[0]);
-                    var documented = ParseDateDocumented(tokens[8]);
-                    var length = float.Parse(tokens[5], NumberStyles.Any, ci);
-                    var latitude = float.Parse(tokens[9], NumberStyles.Any, ci);
-                    var longitude = float.Parse(tokens[10], NumberStyles.Any, ci);
-                    Enum.TryParse<Shape>(tokens[4], out var shape);
-
-                    return new UFORecord
-                    {
-                        Id = result.Count,
-                        DateTime = datetime,
-                        City = tokens[1],
-                        StateOrProvince = tokens[2],
-                        Country = tokens[3],
-                        Shape = tokens[4],
-                        ShapeEnum = shape,
-                        Length = length,
-                        DescribedLength = tokens[6],
-                        Description = tokens[7],
-                        DocumentedAt = documented,
-                        Latitude = latitude,
-                        Longitude = longitude,
-                    };
-                }
-
-                string line;
-                while ((line = await sr.ReadLineAsync()) != null)
-                {
-                    try
-                    {
-                        var record = ParseLine(line);
-                        result.Add(record);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"{result.Count} is invalid");
-                    }
-                }
-            }
-
-            return result;
-        }
-
         static async Task Main(string[] args)
         {
-            var p = new Program();
-            var records = await p.LoadAsync(Filename);
+            var csv = new CsvParser();
+            var records = await csv.LoadAsync(Filename);
+            var trainingSet = records.Where(t => t.ShapeEnum != null).ToList();
+            //var trainingSet = records.Where(t => t.ShapeEnum != null && t.ShapeEnum != Shape.light).ToList();
+            var predictSet = records.Where(t => t.ShapeEnum == null).ToList();
 
-            var shapeNaiveBayes = new ShapeNaiveBayes();
-            var shapeLeaveOneOutCrossValidation = new ShapeLeaveOneOutCrossValidation();
-            var predictionSuccess = shapeLeaveOneOutCrossValidation.Validate(shapeNaiveBayes, records, 20);
-            Console.WriteLine($"Prediction success: {predictionSuccess * 100}%");
+            //var shapeLeaveOneOutCrossValidation = new ShapeLeaveOneOutCrossValidation();
+            //var predictionSuccess = shapeLeaveOneOutCrossValidation.Validate(trainingSet, 200);
+            //Console.WriteLine($"Prediction success: {predictionSuccess * 100}%");
+
+            var predict = new Predict();
+            var shapeNaiveBayes = new ShapeNaiveBayes(trainingSet);
+            //var ids = new[] { 63, 64, 240, 337, 613 };
+            //var shape = shapeNaiveBayes.Predict(predictSet.Where(t => ids.Contains(t.Id)));
+            //var predicted = predict.PredictShape(shapeNaiveBayes, predictSet.Where(t => ids.Contains(t.Id)));
+            var predicted = predict.PredictShape(shapeNaiveBayes, predictSet);
+
+            var predictedCounts = predicted.GroupBy(t => t.ShapeEnum.Value)
+                .ToDictionary(t => t.Key, t => new
+                {
+                    Count = t.Count(),
+                    Values = t.ToList(),
+                });
+
+            foreach (var item in predictedCounts.OrderBy(t => t.Key.ToString()))
+            {
+                int count = item.Value.Count;
+                bool preview = count > 10;
+                int take = preview ? 10 : count;
+                Console.WriteLine($"Shape={item.Key}" +
+                    $" Count={count}" +
+                    $" items = [{string.Join(", ", item.Value.Values.Take(take).Select(tt => tt.Id))}{(preview ? " ..." : "")}]");
+            }
+
+            //foreach (var item in predicted)
+            //{
+            //    Console.WriteLine($"{item.DateTime}: {item.ShapeEnum}");
+            //}
         }
     }
 }

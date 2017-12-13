@@ -7,36 +7,61 @@ namespace MAD.Project
 {
     public class ShapeNaiveBayes
     {
-        public Shape Predict(ICollection<UFORecord> data, UFORecord instance)
+        readonly IReadOnlyDictionary<Shape, List<UFORecord>> trainingSet;
+        readonly int total;
+
+        public ShapeNaiveBayes(ICollection<UFORecord> trainingSet)
         {
-            var values = new List<(Shape Shape, int Probability)>();
+            this.total = trainingSet.Count;
+            this.trainingSet = trainingSet
+                .GroupBy(t => t.ShapeEnum.Value)
+                .ToDictionary(t => t.Key, t => t.ToList());
+        }
 
-            int Calculate(ICollection<UFORecord> d, Shape s)
+        public Shape Predict(UFORecord toPredict)
+        {
+            var values = new List<(Shape Shape, float Probability)>();
+
+            float Calculate(UFORecord instance, Shape s)
             {
-                List<int> probabilities = new List<int>();
-                var filteredData = d.Where(t => t.ShapeEnum == s).ToList();
+                var probabilities = new List<float>();
 
-                void Append(Func<UFORecord, bool> p) => probabilities.Add(filteredData.Count(p));
+                if (!trainingSet.TryGetValue(s, out var filteredData))
+                    return 0;
+
+                void Append(Func<UFORecord, bool> p) => probabilities.Add(filteredData.Count(p) / (float)filteredData.Count);
 
                 const StringComparison StringComparison = StringComparison.OrdinalIgnoreCase;
-                Append(u => u.DateTime.TimeOfDay == instance.DateTime.TimeOfDay);
-                Append(u => u.City.Equals(instance.City, StringComparison));
-                Append(u => u.StateOrProvince.Equals(instance.StateOrProvince, StringComparison));
+                // 1
+                //Append(u => u.DateTime == instance.DateTime);
+                //Append(u => u.DateTime.TimeOfDay == instance.DateTime.TimeOfDay);
+                Append(u => u.DateTime.Hour == instance.DateTime.Hour);
+                //Append(u => u.City.Equals(instance.City, StringComparison));
+                //Append(u => u.StateOrProvince.Equals(instance.StateOrProvince, StringComparison));
                 Append(u => u.Country.Equals(instance.Country, StringComparison));
                 Append(u => u.Length == instance.Length);
-                Append(u => u.Shape.Equals(instance.Shape, StringComparison));
-                Append(u => u.DescribedLength.Equals(instance.DescribedLength, StringComparison));
-                Append(u => u.Description.Equals(instance.Description, StringComparison));
-                Append(u => u.Latitude == instance.Latitude);
-                Append(u => u.Longitude == instance.Longitude);
+                //Append(u => u.DescribedLength.Equals(instance.DescribedLength, StringComparison));
+                //Append(u => u.Description.Equals(instance.Description, StringComparison));
+                //Append(u => u.DocumentedAt == instance.DocumentedAt);
 
-                return probabilities.Sum();
+                // may I use some radius from the required instance
+                //Append(u => u.Latitude == instance.Latitude);
+                //Append(u => u.Longitude == instance.Longitude);
+
+                // 2
+                //Append(u => u.Length == instance.Length);
+
+                float probability = filteredData.Count / (float)total; // prior probability
+                foreach (var p in probabilities)
+                    probability *= p;
+                return probability;
             }
 
             foreach (Shape s in Enum.GetValues(typeof(Shape)))
-                values.Add((s, Calculate(data, s)));
+                values.Add((s, Calculate(toPredict, s)));
 
-            return values.MaxBy(t => t.Probability).Shape;
+            var result = values.MaxBy(t => t.Probability);
+            return result.Shape;
         }
     }
 }

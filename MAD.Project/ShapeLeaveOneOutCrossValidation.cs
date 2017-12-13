@@ -1,17 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace MAD.Project
 {
     public class ShapeLeaveOneOutCrossValidation
     {
-        public float Validate(ShapeNaiveBayes predictionMethod, ICollection<UFORecord> sourceData) =>
-            Validate(predictionMethod, sourceData, sourceData.Count);
-
-        public float Validate(ShapeNaiveBayes predictionMethod, ICollection<UFORecord> sourceData, int count)
+        public float Validate(ICollection<UFORecord> sourceData, int count)
         {
             var tasks = new Task<int>[Environment.ProcessorCount];
 
@@ -25,41 +21,16 @@ namespace MAD.Project
             for (int i = 0; i < tasks.Length; i++)
             {
                 int ii = i;
-                tasks[i] = Task.Run(() => Validate(predictionMethod, sourceData, chunks[ii].From, chunks[ii].To));
+                tasks[i] = Task.Run(() => Validate(sourceData, chunks[ii].From, chunks[ii].To));
             }
 
             Task.WaitAll(tasks);
 
             int successPredict = tasks.Sum(t => t.Result);
             return successPredict / (float)(sourceData.Count / FractionFactor);
-
-            //var data = sourceData.ToList();
-            //var toPredict = data[0];
-            //data.RemoveAt(0);
-            //int successPredict = 0;
-
-            //void CheckPrediction()
-            //{
-            //    var predicted = predictionMethod.Predict(data, toPredict);
-            //    if (predicted == toPredict.ShapeEnum)
-            //        successPredict++;
-            //}
-
-            //for (int i = 0; i < count; i++)
-            //{
-            //    CheckPrediction();
-
-            //    var tmp = data[i];
-            //    data[i] = toPredict;
-            //    toPredict = tmp;
-            //}
-
-            //CheckPrediction();
-
-            //return successPredict / (float)count;
         }
 
-        int Validate(ShapeNaiveBayes predictionMethod, IEnumerable<UFORecord> sourceData, int from, int to)
+        int Validate(IEnumerable<UFORecord> sourceData, int from, int to)
         {
             var data = sourceData.ToList();
             var toPredict = data[from];
@@ -68,9 +39,12 @@ namespace MAD.Project
 
             void CheckPrediction()
             {
-                var predicted = predictionMethod.Predict(data, toPredict);
-                if (predicted == toPredict.ShapeEnum)
+                var predictionMethod = new ShapeNaiveBayes(data);
+                var predicted = predictionMethod.Predict(toPredict);
+                var success = predicted == toPredict.ShapeEnum;
+                if (success)
                     successPredict++;
+                //ColorConsole.WriteLine(success ? ConsoleColor.Green : ConsoleColor.Red, $"Predicted: {predicted} should be {toPredict.ShapeEnum}");
             }
 
             for (int i = from; i < to; i++)
