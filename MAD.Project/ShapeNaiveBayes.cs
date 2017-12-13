@@ -36,9 +36,9 @@ namespace MAD.Project
                 //Append(u => u.DateTime == instance.DateTime);
                 //Append(u => u.DateTime.TimeOfDay == instance.DateTime.TimeOfDay);
                 Append(u => u.DateTime.Hour == instance.DateTime.Hour);
-                //Append(u => u.City.Equals(instance.City, StringComparison));
+                Append(u => u.City.Equals(instance.City, StringComparison));
                 //Append(u => u.StateOrProvince.Equals(instance.StateOrProvince, StringComparison));
-                Append(u => u.Country.Equals(instance.Country, StringComparison));
+                //Append(u => u.Country.Equals(instance.Country, StringComparison));
                 Append(u => u.Length == instance.Length);
                 //Append(u => u.DescribedLength.Equals(instance.DescribedLength, StringComparison));
                 //Append(u => u.Description.Equals(instance.Description, StringComparison));

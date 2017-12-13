@@ -1,0 +1,21 @@
+day,season,wind,rain,class
+weekday,spring,none,none,on time
+weekday,winter,none,slight,on time
+weekday,winter,none,slight,on time
+weekday,winter,high,heavy,late
+saturday,summer,normal,none,on time
+weekday,autumn,normal,none,very late
+holiday,summer,high,slight,on time
+sunday,summer,normal,none,on time
+weekday,winter,high,heavy,very late
+weekday,summer,none,slight,on time
+saturday,spring,high,heavy,cancelled
+weekday,summer,high,slight,on time
+saturday,winter,normal,none,late
+weekday,summer,high,none,on time
+weekday,winter,normal,heavy,very late
+saturday,autumn,high,slight,on time
+weekday,autumn,none,heavy,on time
+holiday,spring,normal,slight,on time
+weekday,spring,normal,none,on time
+weekday,spring,normal,slight,on time
