@@ -7,7 +7,29 @@ namespace MAD.Project
 {
     public class TextReport
     {
-        public async Task WriteReport(string filename, DataMatrix allData, DataMatrix trainingData, DataMatrix predictData, List<string> predictResults, string response, string[] predictors)
+        public async Task WriteNaiveBayesProbabilitiesTableAsync(TextWriter tw, NaiveBayes nb)
+        {
+            await tw.WriteLineAsync(';' + string.Join(";", nb.Classes.Select(t => $"class='{t}'")));
+
+            foreach (var attribute in nb.ConditionalProbabilities)
+                foreach (var attributeValue in attribute.Value)
+                {
+                    await tw.WriteAsync($"{attribute.Key}='{attributeValue.Key}'");
+                    foreach (var @class in nb.Classes)
+                    {
+                        if (attributeValue.Value.TryGetValue(@class, out var value))
+                            await tw.WriteAsync($";{value:n2}");
+                        else
+                            await tw.WriteAsync($";0");
+                    }
+                    await tw.WriteLineAsync();
+                }
+
+            await tw.WriteLineAsync("Prior Probability;" + string.Join(";", nb.Classes.Select(t => $"{ nb.PriorProbabilities[t].Prior:n2}")));
+        }
+
+        public async Task WriteReport(string filename, DataMatrix allData, DataMatrix trainingData, DataMatrix predictData, List<string> predictResults, 
+            string response, string[] predictors, NaiveBayes naiveBayes, float predictSuccess)
         {
             using (var sw = new StreamWriter("report.txt"))
             {
@@ -30,15 +52,17 @@ namespace MAD.Project
                 await sw.WriteLineAsync("longitude - longitude");
                 await sw.WriteLineAsync();
 
-                await sw.WriteLineAsync($"Klasifikace pomoci Naive-Bayes ({response} -> {string.Join(" + ", predictors)}");
+                await sw.WriteLineAsync($"Klasifikace pomoci Naive-Bayes ({response} -> {string.Join(" + ", predictors)})");
+                await WriteNaiveBayesProbabilitiesTableAsync(sw, naiveBayes);
 
+                await sw.WriteLineAsync();
+                await sw.WriteLineAsync("Četnosti predikcí:");
                 var predictedCounts = predictResults.GroupBy(t => t)
                 .ToDictionary(t => t.Key, t => new
                 {
                     Count = t.Count(),
                     Values = t.ToList(),
                 });
-
                 foreach (var item in predictedCounts.OrderBy(t => t.Key.ToString()))
                 {
                     int count = item.Value.Count;
@@ -46,6 +70,7 @@ namespace MAD.Project
                     int take = preview ? 10 : count;
                     await sw.WriteLineAsync($"Shape={item.Key} Count={count}");
                 }
+                await sw.WriteLineAsync($"Success = {predictSuccess}");
             }
         }
     }

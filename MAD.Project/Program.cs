@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.IO;
+using System.Threading.Tasks;
 
 namespace MAD.Project
 {
@@ -23,20 +24,20 @@ namespace MAD.Project
             string[] Predictors = new[] { "length_of_encounter_seconds", "hour" };
 
             var leaveOneOutCrossValidation = new LeaveOneOutCrossValidation();
-            var predictSuccess = leaveOneOutCrossValidation.Validate(data, Response, Predictors, 50);
+            var predictSuccess = leaveOneOutCrossValidation.Validate(data, Response, Predictors, 300);
 
             var shapeIndex = data.IndexOf(Response);
-            var trainingSet = data.Filter(t => !string.IsNullOrEmpty(t.Attributes[shapeIndex]));
-            var predictSet = data.Filter(t => string.IsNullOrEmpty(t.Attributes[shapeIndex]));
+            var trainingSet = data.Filter((t, i) => !string.IsNullOrEmpty(t.Attributes[shapeIndex]));
+            var predictSet = data.Filter((t, i) => string.IsNullOrEmpty(t.Attributes[shapeIndex]));
 
             var naiveBayes = new NaiveBayes(trainingSet, Response, Predictors);
-            //var predicted = naiveBayes.Predict(predictSet[0]);
+            var predicted = naiveBayes.Predict(predictSet[0]);
 
             var predict = new PredictHelper();
             var predictResults = predict.Predict(naiveBayes, predictSet, Response);
 
             var report = new TextReport();
-            await report.WriteReport("report.txt", trainingSet, trainingSet, predictSet, predictResults, Response, Predictors);
+            await report.WriteReport("report.txt", trainingSet, trainingSet, predictSet, predictResults, Response, Predictors, naiveBayes, predictSuccess);
         }
 
         static async Task PresentationData()
@@ -48,6 +49,10 @@ namespace MAD.Project
 
             var validation = new LeaveOneOutCrossValidation();
             var results = validation.Validate(data, "class", new[] { "day", "season", "wind", "rain" }, data.RowsCount - 1);
+
+            var report = new TextReport();
+            using (var sw = new StreamWriter("presentationreport.txt"))
+                await report.WriteNaiveBayesProbabilitiesTableAsync(sw, naiveBayes);
         }
     }
 }
