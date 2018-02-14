@@ -31,7 +31,7 @@ namespace MAD.Project
             var predictSet = data.Filter((t, i) => string.IsNullOrEmpty(t.Attributes[shapeIndex]));
 
             var naiveBayes = new NaiveBayes(trainingSet, Response, Predictors);
-            var predicted = naiveBayes.Predict(predictSet[0]);
+            //var predicted = naiveBayes.Predict(predictSet[0]);
 
             var predict = new PredictHelper();
             var predictResults = predict.Predict(naiveBayes, predictSet, Response);

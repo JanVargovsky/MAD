@@ -1,0 +1,196 @@
+---
+title: "UFO sightings"
+author: "Jonathan Bouchet"
+date: "`r Sys.Date()`"
+output:
+ html_document:
+    fig_width: 10
+    fig_height: 7
+    toc: yes
+    number_sections : yes
+    code_folding: show
+---
+
+```{r setup}
+options(width=100)
+knitr::opts_chunk$set(out.width='1000px',dpi=200,message=FALSE,warning=FALSE)
+```
+
+```{r}
+#load packages and csv file
+library(ggplot2)
+library(dplyr)
+library(gridExtra)
+library(grid)
+library(RColorBrewer)
+library(ggrepel)
+library(ggthemes)
+library(viridis)
+library(ggjoy)
+```
+
+#Data preparation
+
+* decode year, month, day, hour, minutes
+
+```{r}
+df<-read.csv('../input/ufo_sighting_data.csv',sep=',',stringsAsFactors=F)
+df$latitude<-as.numeric(df$latitude)
+df$year<-sapply(df$Date_time, function(x) as.numeric(strsplit(strsplit(x," ")[[1]][1],"/")[[1]][3]))
+df$month<-sapply(df$Date_time, function(x) as.numeric(strsplit(strsplit(x," ")[[1]][1],"/")[[1]][1]))
+df$day<-sapply(df$Date_time, function(x) as.numeric(strsplit(strsplit(x," ")[[1]][1],"/")[[1]][2]))
+df$hour<-sapply(df$Date_time, function(x) as.numeric(strsplit(strsplit(x," ")[[1]][2],":")[[1]][1]))
+df$hour<-ifelse(df$hour==24,0,df$hour)
+df$min<-sapply(df$Date_time, function(x) as.numeric(strsplit(strsplit(x," ")[[1]][2],":")[[1]][2]))
+df$month_name<-sapply(df$month, function(x) month.name[x])
+df$month_name_ordered<-factor(df$month_name, levels =c(month.name))
+df$DATE<-sapply(df$Date_time, function(x) strsplit(x,' ')[[1]][1])
+df$DATE_2<-as.Date(df$DATE,"%m/%d/%Y")
+df$weekday <- factor(weekdays(df$DATE_2, T), levels = rev(c("Mon", "Tue", "Wed", "Thu","Fri", "Sat", "Sun")))
+df$length_min<-as.numeric(df$length_of_encounter_seconds)/60
+```
+
+* define a blank_theme
+
+```{r}
+blank_theme <- theme_fivethirtyeight()+
+  theme(
+  axis.title.x = element_blank(),
+  axis.title.y = element_blank(),
+  panel.border = element_blank(),
+  panel.grid=element_blank(),
+  axis.ticks = element_blank(),
+  plot.title=element_text(size=14, face="bold")
+  )
+```
+
+#Overview
+
+```{r}
+g1<-ggplotGrob(
+  df %>% 
+    group_by(UFO_shape) %>% 
+    summarize(count=n()) %>% 
+    ggplot(aes(x="",y=count,fill=UFO_shape)) + 
+    geom_bar(width = 1, stat = "identity",color='white',size=.25) + coord_polar("y") + 
+    scale_fill_manual(name="",values=viridis::inferno(length(unique(df$UFO_shape)))) + 
+    blank_theme + 
+    theme(axis.text.x=element_blank(), 
+          legend.text=element_text(size=8),
+          legend.key.size = unit(.3, "cm")))
+
+g2<-df %>% 
+  group_by(year,country) %>% 
+  summarize(count=n()) %>%
+  ggplot(aes(x=year,y=count,fill=country)) + 
+  geom_histogram(stat='identity',width=1,color='white',size=.25) + 
+  scale_fill_brewer(palette='Paired') + geom_vline(xintercept=1993,color='black') + 
+  annotate("text", x = 1985, y = 6000, label = "X-Files\nTV-show starts",color='black') + 
+  theme_fivethirtyeight() + 
+  ggtitle('UFO sightings overview\nby year, shape, location') + 
+  theme(legend.position='right',legend.direction='vertical')
+```
+
+```{r}
+g2 + annotation_custom(grob = g1, xmin = 1900, xmax = 1950, ymin = 1500, ymax = 6500)
+```
+
+* we see a lerge increase of sightings at the beginning of the `90's`
+    * I indicated the start of the `X-Files` TV show for reference
+    * the first sighting was done in 1906
+* most of the sightings are done in the US (more on this below)
+* the main shapes observed are `light`, then `triangle`, `circle` and `fireball`
+
+##In details : Location
+
+```{r}
+countries_map <-map_data("world")
+world_map<-ggplot() + 
+  geom_map(data = countries_map, 
+           map = countries_map,aes(x = long, y = lat, map_id = region, group = group),
+           fill = "white", color = "black", size = 0.1)
+
+world_map + geom_point(data=df,aes(x=longitude,y=latitude),alpha=.5,size=.25) + theme_fivethirtyeight() + ggtitle('Location of UFO sightings')
+```
+
+* For sure `E.T.` likes the US ...
+* so since most of the observations were done here 
+
+```{r}
+states_map<-map_data("state")
+usMap<-ggplot() + 
+  geom_map(data = states_map, map = states_map,aes(x = long, y = lat, map_id = region, group = group),fill = "white", color = "black", size = 0.1) + 
+  theme_fivethirtyeight()
+
+usMap + 
+  geom_point(data=filter(df,country=='us' & state.province!='hi' & state.province!='ak' & state.province!='pr'),aes(x=longitude,y=latitude),alpha=.75,size=.5) + ggtitle('Location of UFO sightings in the US')
+```
+
+* yep ... `E.T.` prefers the east coast and the big cities ...
+
+##Time during the day
+
+```{r}
+df %>% group_by(hour,month_name_ordered) %>% summarize(count=n()) %>% ggplot(aes(x=factor(hour),y=count,color=month_name_ordered,group=month_name_ordered)) + geom_line() + theme_fivethirtyeight() + scale_color_manual(name="",values=brewer.pal(12,'Paired')) + geom_point(color='black',size=.5,alpha=1) + ggtitle('# of UFO observations during the day')
+```
+
+* mostly in evening 
+* also note that the peak decreases during winter
+
+##Time during the week
+
+```{r}
+df %>% group_by(weekday,month_name_ordered) %>% summarize(count=n()) %>% ggplot(aes(x=weekday,y=count,color=month_name_ordered,group=month_name_ordered)) + geom_line() + theme_fivethirtyeight() + scale_color_brewer(name="",palette='Paired') + geom_point(color='black',size=.5,alpha=1) + ggtitle('# of UFO observations during the week')
+```
+
+* mostly during the weekend ...`E.T.` had a busy week at work and prefers to go outside during the weekend.
+
+#Duration of the encounter
+
+Let's take a look at the duration of the encounter.
+
+##Outliers
+
+First a look at the distribution of the duration (in minutes) reveals that there are some very large outliers. For example :
+
+```{r}
+df %>% filter(length_min>1e6) %>% select(-c(length_of_encounter_seconds,DATE_2,description,year, month, day ,hour, min, month_name, month_name_ordered,state.province))
+```
+
+* it seems there is a typo in the largest encounter because `97836000` makes 3.1 years, however the difference between the `date_documented` and the `Date_time` is 30 years
+* but even though 30 or 21 years is a very long time
+
+```{r}
+df %>% 
+  select(length_min, country) %>% 
+  ggplot(aes(x=log(length_min), y= country)) + 
+  geom_joy(scale = 1.5) + theme_joy() + 
+  ggtitle("log(encounter's duration) [min] vs. country") + xlab('minutes(log scale)') + ylab('Country')
+```
+
+##Average duration by `UFO shape`
+
+```{r}
+df %>% 
+  select(UFO_shape,length_min) %>% 
+  group_by(UFO_shape) %>% 
+  mutate(medianLength = median(log(length_min))) %>% 
+  ggplot(aes(x=reorder(UFO_shape, medianLength),y=log(length_min),fill=UFO_shape)) + 
+  geom_boxplot(colour='black',size=.4,alpha=.5) + 
+  geom_jitter(shape=16,position=position_jitter(0.2),size=.25) + 
+  coord_flip() + theme_fivethirtyeight() + 
+  scale_fill_manual(values=viridis::inferno(length(unique(df$UFO_shape)))) + 
+  theme(legend.position='right',legend.direction='vertical') + 
+  ggtitle('Log(duration) [min] vs. UFO shape')
+```
+
+* the shortest durations are found for shapes like `flash`, `fireball`, ie quick events
+* the longest durations are found for bigger shapes, like `diamond`, `sphere`, `cone`
+
+<strong>History :</strong>
+
+* _version 1 : initial commit_
+* _version 2 : fix the 24-0 hour notation_
+* _version 3 : added duration vs. shape section_
+
+<hr>

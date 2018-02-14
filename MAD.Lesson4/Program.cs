@@ -24,21 +24,21 @@ namespace MAD.Lesson4
             return matrix;
         }
 
-        double[] ClusterAnalysis(int[,] matrix)
+        double[] ClusterAnalysis(int[,] matrix, int offset = 1)
         {
             var size = matrix.GetLength(0);
             var result = new double[size];
-            int n = size - 1;
-            for (int i = 1; i < size; i++)
+            int n = size - offset;
+            for (int i = offset; i < size; i++)
             {
                 int neighbors = 0;
-                for (int j = 1; j < size; j++)
+                for (int j = offset; j < size; j++)
                     if (matrix[i, j] > 0)
                         neighbors++;
                 int maximumNumberOfEdges = neighbors * (neighbors - 1);
 
                 int numberOfEdges = 0;
-                for (int j = 1; j < size; j++)
+                for (int j = offset; j < size; j++)
                 {
                     for (int k = j + 1; k < size; k++)
                     {
@@ -90,12 +90,12 @@ namespace MAD.Lesson4
             }
         }
 
-        public void WriteAll(int[,] matrix)
+        public void WriteAll(int[,] matrix, int offset = 1)
         {
-            var clusterAnalysis = ClusterAnalysis(matrix);
-            Console.WriteLine($"Prumerny shlukovaci koeficient: {clusterAnalysis.Skip(1).Average():n3}");
+            var clusterAnalysis = ClusterAnalysis(matrix, offset);
+            Console.WriteLine($"Prumerny shlukovaci koeficient: {clusterAnalysis.Skip(offset).Average():n3}");
             Console.WriteLine("Shlukovací koeficienty");
-            for (int i = 1; i < clusterAnalysis.Length; i++)
+            for (int i = offset; i < clusterAnalysis.Length; i++)
                 Console.WriteLine($"{i} = {clusterAnalysis[i]:n3}");
         }
 

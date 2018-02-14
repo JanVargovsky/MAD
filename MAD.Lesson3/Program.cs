@@ -26,18 +26,18 @@ namespace MAD.Lesson3
             return matrix;
         }
 
-        int[,] FloydWarshall(int[,] inputMatrix)
+        int[,] FloydWarshall(int[,] inputMatrix, int offset = 1)
         {
             int length = inputMatrix.GetLength(0);
             var matrix = new int[length, length];
 
-            for (int i = 1; i < length; i++)
-                for (int j = 1; j < length; j++)
+            for (int i = offset; i < length; i++)
+                for (int j = offset; j < length; j++)
                     matrix[i, j] = inputMatrix[i, j] != 0 ? inputMatrix[i, j] : 10000;
 
-            for (int k = 1; k < length; k++)
-                for (int i = 1; i < length; i++)
-                    for (int j = 1; j < length; j++)
+            for (int k = offset; k < length; k++)
+                for (int i = offset; i < length; i++)
+                    for (int j = offset; j < length; j++)
                     {
                         long newLength = matrix[i, k] + (long)matrix[k, j];
                         if (matrix[i, j] > newLength)
@@ -50,11 +50,11 @@ namespace MAD.Lesson3
             return matrix;
         }
 
-        double AverageDistance(int[,] matrix)
+        double AverageDistance(int[,] matrix, int offset = 1)
         {
             int length = matrix.GetLength(0);
             double total = 0;
-            for (int i = 1; i < length; i++)
+            for (int i = offset; i < length; i++)
                 for (int j = i + 1; j < length; j++)
                     total += matrix[i, j];
 
@@ -63,11 +63,11 @@ namespace MAD.Lesson3
             return result;
         }
 
-        int Average(int[,] matrix)
+        int Average(int[,] matrix, int offset = 1)
         {
             int length = matrix.GetLength(0);
             int result = 0;
-            for (int i = 1; i < length; i++)
+            for (int i = offset; i < length; i++)
                 for (int j = i + 1; j < length; j++)
                     if (matrix[i, j] > result)
                         result = matrix[i, j];
@@ -75,12 +75,12 @@ namespace MAD.Lesson3
             return result;
         }
 
-        (int Value, int Frequency, double Percentage)[] Frequency(int[,] matrix)
+        (int Value, int Frequency, double Percentage)[] Frequency(int[,] matrix, int offset = 1)
         {
             var frequency = new Dictionary<int, int>();
             int length = matrix.GetLength(0);
 
-            for (int i = 1; i < length; i++)
+            for (int i = offset; i < length; i++)
                 for (int j = i + 1; j < length; j++)
                 {
                     int value = matrix[i, j];
@@ -97,14 +97,14 @@ namespace MAD.Lesson3
                 .ToArray();
         }
 
-        double[] ClosenessCentrality(int[,] matrix)
+        double[] ClosenessCentrality(int[,] matrix, int offset = 1)
         {
             var size = matrix.GetLength(0);
             var result = new double[size];
             int n = size - 1;
-            for (int i = 1; i < size; i++)
+            for (int i = offset; i < size; i++)
             {
-                for (int j = 1; j < size; j++)
+                for (int j = offset; j < size; j++)
                     if (i != j)
                         result[i] += matrix[i, j];
 
@@ -113,21 +113,21 @@ namespace MAD.Lesson3
             return result;
         }
 
-        public void WriteAll(int[,] incidenceMatrix)
+        public void WriteAll(int[,] incidenceMatrix, int offset = 1)
         {
-            var floydMatrix = FloydWarshall(incidenceMatrix);
+            var floydMatrix = FloydWarshall(incidenceMatrix, offset);
 
-            Console.WriteLine($"Prumerna vzdalenost: {AverageDistance(floydMatrix)}");
-            Console.WriteLine($"Prumer: {Average(floydMatrix)}");
+            Console.WriteLine($"Prumerna vzdalenost: {AverageDistance(floydMatrix, offset)}");
+            Console.WriteLine($"Prumer: {Average(floydMatrix, offset)}");
 
             Console.WriteLine("Četnost");
-            var frequency = Frequency(floydMatrix);
+            var frequency = Frequency(floydMatrix, offset);
             foreach (var f in frequency)
                 Console.WriteLine($"{f.Value}={f.Frequency} ({f.Percentage:n2}%)");
 
             Console.WriteLine("Closeness centrality");
-            var closenessCentrality = ClosenessCentrality(floydMatrix);
-            for (int i = 1; i < closenessCentrality.Length; i++)
+            var closenessCentrality = ClosenessCentrality(floydMatrix, offset);
+            for (int i = offset; i < closenessCentrality.Length; i++)
                 Console.WriteLine($"{i}={closenessCentrality[i]:n4}");
         }
 

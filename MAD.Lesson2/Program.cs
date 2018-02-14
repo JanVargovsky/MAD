@@ -57,10 +57,10 @@ namespace MAD.Lesson2
             File.WriteAllLines("histogram.csv", histogram.Select(t => $"{t.Degree},{t.Count}"));
         }
 
-        public void WriteAll(int[,] matrix)
+        public void WriteAll(int[,] matrix, int offset = 1)
         {
             Dictionary<int, int> degrees = new Dictionary<int, int>(); // <nodeId, degree>
-            for (int i = 1; i < matrix.GetLength(0); i++)
+            for (int i = offset; i < matrix.GetLength(0); i++)
                 degrees[i] = GetDegree(matrix, i);
 
             var minDegree = degrees.MinBy(t => t.Value);

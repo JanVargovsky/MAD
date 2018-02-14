@@ -1,0 +1,16 @@
+;class='on time';class='late';class='very late';class='cancelled'
+day='weekday';0,64;0,50;1,00;0
+day='saturday';0,14;0,50;0;1,00
+day='holiday';0,14;0;0;0
+day='sunday';0,07;0;0;0
+season='spring';0,29;0;0;1,00
+season='winter';0,14;1,00;0,67;0
+season='summer';0,43;0;0;0
+season='autumn';0,14;0;0,33;0
+wind='none';0,36;0;0;0
+wind='high';0,29;0,50;0,33;1,00
+wind='normal';0,36;0,50;0,67;0
+rain='none';0,36;0,50;0,33;0
+rain='slight';0,57;0;0;0
+rain='heavy';0,07;0,50;0,67;1,00
+Prior Probability;0,70;0,10;0,15;0,05
