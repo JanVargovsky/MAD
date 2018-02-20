@@ -2,8 +2,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MAD2.Lesson1
@@ -54,7 +56,7 @@ namespace MAD2.Lesson1
             var lines = await File.ReadAllLinesAsync(filename);
             IrisData Parse(string line)
             {
-                float ParseFloat(string s) => float.Parse(s.Replace('.', ','));
+                float ParseFloat(string s) => float.Parse(s);
 
                 var tokens = line.Split(',');
                 return new IrisData
@@ -67,12 +69,6 @@ namespace MAD2.Lesson1
                 };
             }
             return lines.Select(Parse);
-        }
-
-        enum SimilarityAlgorithm
-        {
-            EpsilonRadius,
-            KNN
         }
 
         Matrix<double> CalculateDistanceMatrix<T>(IList<T> data, Func<T, T, double> distanceFunc)
@@ -103,7 +99,7 @@ namespace MAD2.Lesson1
                     rowValues.Add((distanceMatrix[row, i], i));
                 }
 
-                return rowValues.OrderBy(t => t.Value).Take(k).Select(t => t.Index);
+                return rowValues.OrderByDescending(t => t.Value).Take(k).Select(t => t.Index);
             }
 
             Matrix<double> similarityMatix = new Matrix<double>(size);
@@ -129,27 +125,32 @@ namespace MAD2.Lesson1
             return similarityMatix;
         }
 
-        double CalculateGaussianKernel(IrisData a, IrisData b)
+        double EuclidDistance(IrisData a, IrisData b)
         {
-            double vectorDistance =
-                a.PetalLength - b.PetalLength +
-                a.PetalWidth - b.PetalWidth +
-                a.SepalLength - b.SepalLength +
-                a.SepalWidth - b.SepalWidth;
-
-            return Math.Exp(-Math.Pow(vectorDistance, 2) / 2);
+            return Math.Sqrt(
+                Math.Pow(a.PetalLength - b.PetalLength, 2) +
+                Math.Pow(a.PetalWidth - b.PetalWidth, 2) +
+                Math.Pow(a.SepalLength - b.SepalLength, 2) +
+                Math.Pow(a.SepalWidth - b.SepalWidth, 2));
         }
 
-        async Task ExportToGDFAsync<T>(Matrix<T> matrix, string filename, Func<T, bool> filter)
+        // aka a similarity function
+        double CalculateGaussianKernel(IrisData a, IrisData b)
+        {
+            double distance = EuclidDistance(a, b);
+            return Math.Exp(-distance / 2);
+        }
+
+
+        async Task ExportToGDFAsync<T, N>(Matrix<T> matrix, IList<N> nodes, string filename, Func<T, bool> filter, Func<N, string> classSelector)
         {
             using (var sw = new StreamWriter(filename))
             {
-                await sw.WriteLineAsync($"nodedef>name VARCHAR, label VARCHAR");
-                for (int i = 0; i < matrix.Size; i++)
-                    await sw.WriteLineAsync($"s{i}, node{i}");
+                await sw.WriteLineAsync($"nodedef>name VARCHAR, label VARCHAR, class VARCHAR");
+                for (int i = 0; i < nodes.Count; i++)
+                    await sw.WriteLineAsync($"s{i}, node{i}, {classSelector(nodes[i])}");
 
                 await sw.WriteLineAsync($"edgedef>node1 VARCHAR, node2 VARCHAR, weight DOUBLE");
-
                 for (int i = 0; i < matrix.Size; i++)
                     for (int j = i + 1; j < matrix.Size; j++)
                         if (filter(matrix[i, j]))
@@ -157,19 +158,24 @@ namespace MAD2.Lesson1
             }
         }
 
+        Task ExportIrisDataToGDFAsync(Matrix<double> matrix, IList<IrisData> nodes, string filename) =>
+            ExportToGDFAsync(matrix, nodes, filename, t => t > 0, t => t.Name);
+
         static async Task Main(string[] args)
         {
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+
             const string Filename = "../Datasets/iris.data.txt";
             var p = new Program();
             var irisDataSet = (await p.LoadIrisDataAsync(Filename)).ToList();
 
-            const double E = 0.3d;
+            const double E = 0.4d;
             var similarityEpsilon = p.CalculateSimilarityMatrix_EpsilonRadius(irisDataSet, p.CalculateGaussianKernel, E);
-            await p.ExportToGDFAsync(similarityEpsilon, $"export/similarity_epsilon_{E}.gdf", t => t > 0);
+            await p.ExportIrisDataToGDFAsync(similarityEpsilon, irisDataSet, $"export/similarity_epsilon_{E}.gdf");
 
-            const int K = 5;
+            const int K = 50;
             var similarityKNN = p.CalculateSimilarityMatrix_KNN(irisDataSet, p.CalculateGaussianKernel, K);
-            await p.ExportToGDFAsync(similarityKNN, $"export/similarity_knn_{K}.gdf", t => t > 0);
+            await p.ExportIrisDataToGDFAsync(similarityKNN, irisDataSet, $"export/similarity_knn_{K}.gdf");
         }
     }
 }
