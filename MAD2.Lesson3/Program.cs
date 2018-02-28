@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -146,6 +147,7 @@ namespace MAD2.Lesson3
             var edges = await p.ParseCsvAsync(Filename);
             var nodes = p.GetNodes(edges);
             var reducedEdges = p.KernighanLinAlgorithm(nodes, edges);
+            Console.WriteLine($"Min-cut is {edges.Count - reducedEdges.Count}");
             await p.ExportToCsvAsync(reducedEdges, "export/kerninghan-lin.csv");
         }
     }
