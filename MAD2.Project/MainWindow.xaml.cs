@@ -15,6 +15,14 @@ namespace MAD2.Project
         {
             InitializeComponent();
             DataContext = mainViewModel = new MainViewModel();
+
+#if DEBUG
+            var args = Environment.GetCommandLineArgs();
+            if (args.Length > 1)
+                _ = mainViewModel.LoadDatasetAsync(args[1]);
+            if(args.Length > 2)
+                _ = mainViewModel.LoadNodeInformationAsync(args[2]);
+#endif
         }
 
         private async void LoadDataset(object sender, RoutedEventArgs e)
