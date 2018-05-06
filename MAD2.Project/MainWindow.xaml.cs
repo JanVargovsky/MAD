@@ -1,17 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.Win32;
+using System;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace MAD2.Project
 {
@@ -20,9 +9,54 @@ namespace MAD2.Project
     /// </summary>
     public partial class MainWindow : Window
     {
+        readonly MainViewModel mainViewModel;
+
         public MainWindow()
         {
             InitializeComponent();
+            DataContext = mainViewModel = new MainViewModel();
+        }
+
+        private async void LoadDataset(object sender, RoutedEventArgs e)
+        {
+            var openFileDialog = new OpenFileDialog
+            {
+                Multiselect = false,
+                CheckPathExists = true,
+                InitialDirectory = Environment.CurrentDirectory,
+                Filter = "UNICET DL Format files|*.dl",
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+                await mainViewModel.LoadDatasetAsync(openFileDialog.FileName);
+        }
+
+        private async void LoadNodes(object sender, RoutedEventArgs e)
+        {
+            var openFileDialog = new OpenFileDialog
+            {
+                Multiselect = false,
+                CheckPathExists = true,
+                InitialDirectory = Environment.CurrentDirectory,
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+                await mainViewModel.LoadNodeInformationAsync(openFileDialog.FileName);
+        }
+
+        private void BasicAnalysis(object sender, RoutedEventArgs e)
+        {
+            mainViewModel.BasicAnalysis();
+        }
+
+        private void Test(object sender, RoutedEventArgs e)
+        {
+            mainViewModel.AverageDegree++;
+        }
+
+        private void CalculateModularity(object sender, RoutedEventArgs e)
+        {
+            mainViewModel.CalculateModularity();
         }
     }
 }

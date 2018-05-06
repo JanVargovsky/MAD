@@ -5,8 +5,55 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MAD2.Project"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
-        
-    </Grid>
+        Title="MainWindow" Height="450" Width="500" WindowStartupLocation="CenterScreen">
+    <DockPanel>
+        <WrapPanel DockPanel.Dock="Top">
+            <Button Click="LoadDataset">Load dataset</Button>
+            <Button Click="LoadNodes">Load nodes</Button>
+            <Button Click="BasicAnalysis">Basic Analysis</Button>
+        </WrapPanel>
+
+        <Grid>
+            <Grid.Resources>
+                <Style TargetType="RowDefinition">
+                    <Setter Property="Height" Value="Auto"/>
+                </Style>
+                <Style TargetType="ColumnDefinition">
+                    <Setter Property="Width" Value="Auto"/>
+                </Style>
+            </Grid.Resources>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="Number of edges"/>
+            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Path=EdgeCount}"/>
+
+            <TextBlock Grid.Row="1" Text="Number of nodes"/>
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Path=NodeCount}"/>
+
+            <TextBlock Grid.Row="2" Text="Average degree"/>
+            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Path=AverageDegree, StringFormat=F3}"/>
+
+            <TextBlock Grid.Row="3" Text="Average weighted degree"/>
+            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Path=AverageWeightedDegree, StringFormat=F3}"/>
+
+            <TextBlock Grid.Row="4" Text="Number of Weakly connected components"/>
+            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Path=WeaklyConnectedComponents.Count}"/>
+
+            <TextBlock Grid.Row="5" Text="Modularity"/>
+            <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Path=Modularity, StringFormat=F3}"/>
+            <Button Grid.Row="5" Grid.Column="2" Click="CalculateModularity">Calculate</Button>
+        </Grid>
+    </DockPanel>
 </Window>
