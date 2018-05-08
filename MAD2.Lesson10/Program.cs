@@ -82,7 +82,7 @@ namespace MAD2.Lesson10
                 for (int j = 0; j < matrix.Size; j++)
                 {
                     double value = inputMatrix.GetRaw(i, j);
-                    if (value == 0) value = double.PositiveInfinity;
+                    if (value == 0 && i != j) value = double.PositiveInfinity;
                     matrix.SetRaw(i, j, value);
                 }
 
@@ -92,10 +92,7 @@ namespace MAD2.Lesson10
                     {
                         var newLength = matrix.GetRaw(i, k) + matrix.GetRaw(k, j);
                         if (matrix.GetRaw(i, j) > newLength)
-                        {
-                            //Console.WriteLine($"[{i},{j}] New distance from {matrix[i, j]} to {newLength}");
-                            matrix.SetRaw(i, j, (int)newLength);
-                        }
+                            matrix.SetRaw(i, j, newLength);
                     }
 
             return matrix;
