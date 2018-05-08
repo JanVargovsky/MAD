@@ -9,7 +9,7 @@ namespace MAD2.Lesson10
 {
     class Program
     {
-        async Task<(int[] Nodes, Matrix<int>[] Matrices)> LoadTemporaryNetworksAsync(string filename, int timeSplit)
+        async Task<(int[] Nodes, SparseMatrix<int>[] Matrices)> LoadTemporaryNetworksToSparseMatrixAsync(string filename, int timeSplit)
         {
             (int TimeStamp, int From, int To) ParseLine(string line)
             {
@@ -19,9 +19,9 @@ namespace MAD2.Lesson10
                 return (values[0], values[1], values[2]);
             }
 
-            Matrix<int> GroupToMatrix(IEnumerable<(int TimeStamp, int From, int To)> values)
+            SparseMatrix<int> GroupToMatrix(IEnumerable<(int TimeStamp, int From, int To)> values)
             {
-                Matrix<int> matrix = new Matrix<int>();
+                SparseMatrix<int> matrix = new SparseMatrix<int>();
                 values.ForEach(t => matrix.AddEdge(t.From, t.To));
                 return matrix;
             }
@@ -38,14 +38,83 @@ namespace MAD2.Lesson10
             return (nodes, matrices);
         }
 
-        IDictionary<int, double> ClosenessCentrality(int[] nodes, Matrix<int> matrix)
+        async Task<(int[] Nodes, Matrix<int>[] Matrices)> LoadTemporaryNetworksAsync(string filename, int timeSplit)
+        {
+            (int TimeStamp, int From, int To) ParseLine(string line)
+            {
+                var values = line.Split('\t')
+                    .Select(int.Parse)
+                    .ToArray();
+                return (values[0], values[1], values[2]);
+            }
+
+            var data = (await File.ReadAllLinesAsync(filename))
+                .Select(ParseLine)
+                .ToArray();
+
+            var nodes = data.Select(t => t.From).Concat(data.Select(t => t.To)).Distinct().ToArray();
+
+            var min = nodes.Min();
+            var max = nodes.Max();
+            var size = max - min + 1;
+
+            Matrix<int> GroupToMatrix(IEnumerable<(int TimeStamp, int From, int To)> values)
+            {
+                Matrix<int> matrix = new Matrix<int>(size).WithIndexOffset(-min);
+                values.ForEach(t =>
+                {
+                    matrix[t.From, t.To] = matrix[t.To, t.From] = 1;
+                });
+                return matrix;
+            }
+
+            var matrices = data.GroupBy(t => t.TimeStamp / timeSplit)
+                .Select(GroupToMatrix)
+                .ToArray();
+            return (nodes, matrices);
+        }
+
+        Matrix<double> FloydWarshall(Matrix<int> inputMatrix)
+        {
+            var matrix = inputMatrix.EmptyCopy<double>();
+
+            for (int i = 0; i < matrix.Size; i++)
+                for (int j = 0; j < matrix.Size; j++)
+                {
+                    double value = inputMatrix.GetRaw(i, j);
+                    if (value == 0) value = double.PositiveInfinity;
+                    matrix.SetRaw(i, j, value);
+                }
+
+            for (int k = 0; k < matrix.Size; k++)
+                for (int i = 0; i < matrix.Size; i++)
+                    for (int j = 0; j < matrix.Size; j++)
+                    {
+                        var newLength = matrix.GetRaw(i, k) + matrix.GetRaw(k, j);
+                        if (matrix.GetRaw(i, j) > newLength)
+                        {
+                            //Console.WriteLine($"[{i},{j}] New distance from {matrix[i, j]} to {newLength}");
+                            matrix.SetRaw(i, j, (int)newLength);
+                        }
+                    }
+
+            return matrix;
+        }
+
+        IDictionary<int, double> ClosenessCentrality(int[] nodes, Matrix<double> distanceMatrix)
         {
             double N = nodes.Length;
             var result = new Dictionary<int, double>();
+
+            double SumOfWeights(int from) =>
+                Enumerable.Range(-distanceMatrix.IndexOffset, distanceMatrix.Size)
+                .Where(t => !double.IsPositiveInfinity(distanceMatrix[from, t]))
+                .Sum(i => distanceMatrix[from, i]);
+
             foreach (var node in nodes)
             {
-                var missingEdges = matrix.NumberOfEdges(node);
-                var value = missingEdges == 0 ? N : N / missingEdges;
+                var sumOfWeights = SumOfWeights(node);
+                var value = sumOfWeights == 0 ? N : N / sumOfWeights;
                 result[node] = value;
             }
             return result;
@@ -61,10 +130,11 @@ namespace MAD2.Lesson10
 
             for (int i = 0; i < matrices.Length; i++)
             {
-                Console.WriteLine($"Timestamp = {i*TimeSplit} - {(i + 1) * TimeSplit}");
-                var closeness = p.ClosenessCentrality(nodes, matrices[i]);
+                Console.WriteLine($"Timestamp = {i * TimeSplit} - {(i + 1) * TimeSplit}");
+                var floyd = p.FloydWarshall(matrices[i]);
+                var closeness = p.ClosenessCentrality(nodes, floyd);
 
-                Console.WriteLine(string.Join(Environment.NewLine, 
+                Console.WriteLine(string.Join(Environment.NewLine,
                     closeness.OrderBy(t => t.Value)
                     .Select(t => $"Node={t.Key}, Closeness={t.Value}")));
             }
