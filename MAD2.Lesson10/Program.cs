@@ -117,31 +117,37 @@ namespace MAD2.Lesson10
             return result;
         }
 
-        IDictionary<int, double> DegreeCentrality(int[] nodes, Matrix<int>[] matrices)
+        IDictionary<int, int> DegreeCentrality(int[] actors, Matrix<int>[] matrices)
         {
-            var result = new Dictionary<int, double>();
-
-            int Edges(Matrix<int> m, int from) => 
+            // sum of degrees among all layers
+            int Degree(Matrix<int> m, int from) => 
                 Enumerable.Range(-m.IndexOffset, m.Size)
                 .Count(i => m[from, i] > 0);
 
-            foreach (var node in nodes)
-                result[node] = matrices.Sum(m => Edges(m, node) > 0 ? 1 : 0);
-
+            var result = new Dictionary<int, int>();
+            foreach (var actor in actors)
+                result[actor] = matrices.Sum(m => Degree(m, actor));
             return result;
         }
 
-        IDictionary<int, double> NeighborhoodCentrality(int[] nodes, Matrix<int>[] matrices)
+        IDictionary<int, int> NeighborhoodCentrality(int[] actors, Matrix<int>[] matrices)
         {
-            var result = new Dictionary<int, double>();
-
+            // sum of unique edges among all layers
             IEnumerable<int> Neighbors(Matrix<int> m, int from) =>
                 Enumerable.Range(-m.IndexOffset, m.Size)
                 .Where(i => m[from, i] > 0);
 
-            foreach (var node in nodes)
-                result[node] = matrices.SelectMany(m => Neighbors(m, node)).Distinct().Count();
+            var result = new Dictionary<int, int>();
+            foreach (var actor in actors)
+                result[actor] = matrices.SelectMany(m => Neighbors(m, actor)).Distinct().Count();
+            return result;
+        }
 
+        IDictionary<int, double> ConnectiveRedundancy(int[] actors, IDictionary<int, int> neighborhoods, IDictionary<int, int> degrees)
+        {
+            var result = new Dictionary<int, double>();
+            foreach (var actor in actors)
+                result[actor] = 1 - neighborhoods[actor] / (double)degrees[actor];
             return result;
         }
 
@@ -162,6 +168,18 @@ namespace MAD2.Lesson10
             Console.WriteLine(string.Join(Environment.NewLine,
                 neighborhoodCentrality.OrderBy(t => t.Value)
                 .Select(t => $"Node={t.Key}, Neighborhood Centrality={t.Value}")));
+
+            var connectiveRedundancy = p.ConnectiveRedundancy(nodes, neighborhoodCentrality, degreeCentrality);
+            Console.WriteLine(string.Join(Environment.NewLine,
+                connectiveRedundancy.OrderBy(t => t.Value)
+                .Select(t => $"Node={t.Key}, Connective Redundancy={t.Value}")));
+
+            Console.WriteLine(string.Join(Environment.NewLine,
+                nodes.OrderBy(t => t)
+                .Select(t => $"Node={t}" +
+                $", Degree Centrality = {degreeCentrality[t]}".PadRight(25) +
+                $", Neighborhood Centrality = {neighborhoodCentrality[t]}".PadRight(30) +
+                $", Connective Redundancy = {connectiveRedundancy[t]:F2}".PadRight(20))));
 
             for (int i = 0; i < matrices.Length; i++)
             {
