@@ -117,6 +117,34 @@ namespace MAD2.Lesson10
             return result;
         }
 
+        IDictionary<int, double> DegreeCentrality(int[] nodes, Matrix<int>[] matrices)
+        {
+            var result = new Dictionary<int, double>();
+
+            int Edges(Matrix<int> m, int from) => 
+                Enumerable.Range(-m.IndexOffset, m.Size)
+                .Count(i => m[from, i] > 0);
+
+            foreach (var node in nodes)
+                result[node] = matrices.Sum(m => Edges(m, node) > 0 ? 1 : 0);
+
+            return result;
+        }
+
+        IDictionary<int, double> NeighborhoodCentrality(int[] nodes, Matrix<int>[] matrices)
+        {
+            var result = new Dictionary<int, double>();
+
+            IEnumerable<int> Neighbors(Matrix<int> m, int from) =>
+                Enumerable.Range(-m.IndexOffset, m.Size)
+                .Where(i => m[from, i] > 0);
+
+            foreach (var node in nodes)
+                result[node] = matrices.SelectMany(m => Neighbors(m, node)).Distinct().Count();
+
+            return result;
+        }
+
         static async Task Main(string[] args)
         {
             const string Filename = "../../../../Datasets/ht09_contact_list.dat";
@@ -124,6 +152,16 @@ namespace MAD2.Lesson10
             var p = new Program();
 
             var (nodes, matrices) = await p.LoadTemporaryNetworksAsync(Filename, TimeSplit);
+
+            var degreeCentrality = p.DegreeCentrality(nodes, matrices);
+            Console.WriteLine(string.Join(Environment.NewLine,
+                degreeCentrality.OrderBy(t => t.Value)
+                .Select(t => $"Node={t.Key}, Degree Centrality={t.Value}")));
+
+            var neighborhoodCentrality = p.NeighborhoodCentrality(nodes, matrices);
+            Console.WriteLine(string.Join(Environment.NewLine,
+                neighborhoodCentrality.OrderBy(t => t.Value)
+                .Select(t => $"Node={t.Key}, Neighborhood Centrality={t.Value}")));
 
             for (int i = 0; i < matrices.Length; i++)
             {
