@@ -1,9 +1,13 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using MoreLinq;
 
 namespace MAD2.Project
 {
+    [DebuggerDisplay("{DebuggerDisplay,nq}")]
     public class Matrix<T> : IEnumerable<T>
     {
         readonly T[,] data;
@@ -33,5 +37,8 @@ namespace MAD2.Project
         public IEnumerator<T> GetEnumerator() => data.Cast<T>().GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => data.GetEnumerator();
+
+        internal string DebuggerDisplay => 
+            string.Join(Environment.NewLine, this.Batch(Size).Select(row => string.Join(" ", row.Select(t => $"{t}".PadRight(3)))));
     }
 }
