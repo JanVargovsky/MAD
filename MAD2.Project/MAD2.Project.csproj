@@ -69,6 +69,7 @@
     <Compile Include="Matrix.cs" />
     <Compile Include="NetworkDatasetAnalyser.cs" />
     <Compile Include="Node.cs" />
+    <Compile Include="SparseMatrix.cs" />
     <Compile Include="ViewModelBase.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

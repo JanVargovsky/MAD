@@ -144,12 +144,12 @@ namespace MAD2.Project
 
         public void CalculateModularity()
         {
-            Task.Run(() => Modularity = networkDatasetAnalyser.Modularity(adjacencyMatrix));
+            Task.Run(() => Modularity = networkDatasetAnalyser.Modularity(adjacencyMatrix, e => e?.Weight ?? 0));
         }
 
         public void CalculateCommunities()
         {
-            Task.Run(() => Communities = networkDatasetAnalyser.CommunityDetection(adjacencyMatrix, nodes.Keys));
+            //Task.Run(() => Communities = networkDatasetAnalyser.CommunityDetection(adjacencyMatrix, nodes.Keys));
         }
     }
 }

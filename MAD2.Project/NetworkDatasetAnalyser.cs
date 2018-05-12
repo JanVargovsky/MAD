@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace MAD2.Project
@@ -121,10 +122,10 @@ namespace MAD2.Project
             return components.ToArray();
         }
 
-        public double Modularity(Matrix<Edge> adjacencyMatrix, int[] classes = null)
+        public double Modularity<T>(Matrix<T> adjacencyMatrix, Func<T, int> getWeight, int[] classes = null)
         {
             int SumOfEdges(int i) => Enumerable.Range(0, adjacencyMatrix.Size)
-                .Sum(j => adjacencyMatrix.GetRaw(i, j)?.Weight ?? 0);
+                .Sum(j => getWeight(adjacencyMatrix.GetRaw(i, j)));
 
             var k = Enumerable.Range(0, adjacencyMatrix.Size)
                 .Select(SumOfEdges)
@@ -133,7 +134,9 @@ namespace MAD2.Project
             int Delta(int i, int j) => classes == null ? 1 :
                 classes[i].Equals(classes[j]) ? 1 : 0;
 
-            var m = adjacencyMatrix.Where(t => t != null).Sum(t => t.Weight);
+            var m = adjacencyMatrix.Sum(getWeight);
+
+            m /= 2; // every edge is counted twice
 
             double sum = 0;
             for (int i = 0; i < adjacencyMatrix.Size; i++)
@@ -141,9 +144,41 @@ namespace MAD2.Project
                 var ki = k[i];
                 for (int j = 0; j < adjacencyMatrix.Size; j++)
                 {
-                    if (adjacencyMatrix.GetRaw(i, j) == null)
-                        continue;
-                    var A = adjacencyMatrix.GetRaw(i, j).Weight;
+                    var A = getWeight(adjacencyMatrix.GetRaw(i, j));
+                    var kj = k[j];
+                    var f = ki * kj / (2d * m);
+                    var delta = Delta(i, j);
+                    sum += (A - f) * delta;
+                }
+            }
+
+            var Q = 1d / (2d * m) * sum;
+            return Q;
+        }
+
+        public double Modularity(SparseMatrix<Edge> matrix, int[] classes = null)
+        {
+            int SumOfEdges(int i) => matrix.Get(i).Sum(t => t.Weight);
+
+            var k = Enumerable.Range(0, matrix.Size)
+                .Select(SumOfEdges)
+                .ToArray();
+
+            int Delta(int i, int j) => classes == null ? 1 :
+                classes[i].Equals(classes[j]) ? 1 : 0;
+
+            var m = matrix.Sum(t => t.Weight);
+
+            m /= 2; // every edge is counted twice
+
+            double sum = 0;
+            for (int i = 0; i < matrix.Size; i++)
+            {
+                var ki = k[i];
+                for (int j = 0; j < matrix.Size; j++)
+                {
+                    var edge = matrix.Get(i).FirstOrDefault(t => t.NodeTo == j);
+                    var A = edge?.Weight ?? 0;
                     var kj = k[j];
                     var f = ki * kj / (2d * m);
                     var delta = Delta(i, j);
@@ -156,47 +191,35 @@ namespace MAD2.Project
         }
 
         // Fast unfolding of communities in large networks https://arxiv.org/abs/0803.0476
-        public List<List<int>> CommunityDetection(Matrix<Edge> adjacencyMatrix, ICollection<int> nodes)
+        public List<List<int>> CommunityDetection(SparseMatrix<Edge> matrix, ICollection<int> nodes)
         {
             //var communities = nodes.Select(node => new List<int> { node }).ToList();
             var communities = Enumerable.Range(0, nodes.Count).Select(node => new List<int> { node }).ToList();
             var classes = Enumerable.Range(0, nodes.Count).ToArray(); // unique class for each node
 
-            var m = adjacencyMatrix.Where(t => t != null).Sum(t => t.Weight);
+            var m = matrix.Sum(t => t.Weight);
 
-            IEnumerable<(int nodeId, double weight)> GetNeighbors(int i)
-            {
-                for (int j = 0; j < adjacencyMatrix.Size; j++)
-                {
-                    var edge = adjacencyMatrix.GetRaw(i, j);
-                    if (edge?.Weight > 0)
-                        yield return (j, edge.Weight);
-                    else
-                    {
-                        edge = adjacencyMatrix.GetRaw(j, i);
-                        if (edge?.Weight > 0)
-                            yield return (j, edge.Weight);
-                    }
-                }
-            }
+            IEnumerable<(int nodeId, int weight)> GetNeighbors(int i) =>
+                matrix.Get(i)
+                .Select(t => (t.NodeTo, t.Weight));
 
-            double DeltaQ(int communityIndex)
+            double DeltaQ(int i, int c)
             {
                 var sum_in = 0d;
                 var sum_tot = 0d;
                 var k_i = 0d;
                 var k_i_in = 0d;
 
-                // go through all nodes in the community i and check its edges
                 // sum_in   = sum of the weights of the links inside C
                 // sum_tot  = sum of the weights of the links incident to nodes in C
                 // k_i      = sum of the weights of the links incident to node i
                 // k_i_in   = sum of the weights of the links from i to nodes in C
-                foreach (var node in communities[communityIndex])
+
+                foreach (var node in communities[c])
                 {
                     foreach (var (neighbor, weight) in GetNeighbors(node))
                     {
-                        if (communities[communityIndex].Contains(neighbor))
+                        if (communities[c].Contains(neighbor))
                             sum_in += weight;
                         else
                             sum_tot += weight;
@@ -205,6 +228,8 @@ namespace MAD2.Project
                     }
                 }
 
+                k_i_in = matrix.Get(i).Where(t => communities[c].Contains(t.NodeTo)).Sum(t => t.Weight);
+
                 var a1 = (sum_in + 2 * k_i_in) / (2 * m);
                 var a2 = (sum_tot + k_i) / (2 * m);
                 var a = a1 - a2 * a2;
@@ -212,35 +237,54 @@ namespace MAD2.Project
                 var b1 = sum_in / (2 * m);
                 var b2 = sum_tot / (2 * m);
                 var b3 = k_i / (2 * m);
-                var b = b1 - b2*b2 - b3*b3;
+                var b = b1 - b2 * b2 - b3 * b3;
 
                 var q = a - b;
                 return q;
             }
 
+            bool anyMove = false;
+
             foreach (var i in nodes)
             {
-                var maxDeltaQ = -double.MinValue;
+                var qs = new List<(double Q, double C)>();
 
-                foreach (var j in nodes)
+                var maxDeltaQ = double.MinValue;
+                var bestC = -1;
+
+                foreach (var j in matrix.Get(i).Select(t => t.NodeTo))
                 {
-                    if (classes[i] == classes[j]) continue;
+                    //if (classes[i] == classes[j]) continue;
 
-                    // try remove i from its community and add it to community j
-                    var iOriginalCLass = classes[i]; // original class of i
-                    communities[iOriginalCLass].Remove(i);
+                    //// try remove i from its community and add it to community j
+                    //var iOriginalCLass = classes[i]; // original class of i
+                    //communities[iOriginalCLass].Remove(i);
 
-                    classes[i] = classes[j]; // add it to its new one
-                    communities[classes[j]].Add(i);
+                    //classes[i] = classes[j]; // add it to its new one
+                    //communities[classes[j]].Add(i);
 
-                    var deltaQ = DeltaQ(classes[j]);
+                    var deltaQ = DeltaQ(i, classes[j]);
                     if (deltaQ > maxDeltaQ)
+                    {
                         maxDeltaQ = deltaQ;
+                        bestC = classes[j];
+                    }
+
+                    qs.Add((deltaQ, classes[j]));
 
                     // restore back
-                    communities[iOriginalCLass].Add(i);
-                    classes[i] = iOriginalCLass;
-                    communities[classes[j]].Remove(i);
+                    //communities[iOriginalCLass].Add(i);
+                    //classes[i] = iOriginalCLass;
+                    //communities[classes[j]].Remove(i);
+                }
+
+                // positive move
+                if (maxDeltaQ > 0 && bestC != -1)
+                {
+                    var c = classes[i];
+                    communities[c].Remove(i);
+                    communities[bestC].Add(i);
+                    classes[i] = bestC;
                 }
 
                 // store also where should i move with deltaQ
