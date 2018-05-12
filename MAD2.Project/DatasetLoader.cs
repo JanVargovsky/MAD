@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace MAD2.Project
 {
-    class DatasetLoader
+    public class DatasetLoader
     {
         public async Task<List<Edge>> LoadDatasetAsync(string path)
         {

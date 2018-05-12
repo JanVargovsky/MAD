@@ -66,5 +66,15 @@ namespace MAD2.Project
         {
             mainViewModel.CalculateModularity();
         }
+
+        private void ShowDegreeHistogram(object sender, RoutedEventArgs e)
+        {
+            mainViewModel.ShowDegreeHistogram();
+        }
+
+        private void CalculateCommunities(object sender, RoutedEventArgs e)
+        {
+            mainViewModel.CalculateCommunities();
+        }
     }
 }

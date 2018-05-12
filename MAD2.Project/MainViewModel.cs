@@ -1,5 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using LiveCharts.Helpers;
+using LiveCharts.Wpf;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace MAD2.Project
 {
@@ -58,6 +62,18 @@ namespace MAD2.Project
             }
         }
 
+        private List<List<int>> communities;
+        public List<List<int>> Communities
+        {
+            get { return communities; }
+            set
+            {
+                communities = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+
         public MainViewModel()
         {
             datasetLoader = new DatasetLoader();
@@ -80,6 +96,27 @@ namespace MAD2.Project
             adjacencyMatrix = datasetLoader.GetAdjacencyMatrix(edges, nodes.Values);
         }
 
+        public void ShowDegreeHistogram()
+        {
+            var degreeHistogram = networkDatasetAnalyser.DegreeHistogram(edges, nodes.Keys);
+
+            var chart = new CartesianChart();
+            var serie = new StepLineSeries
+            {
+                Values = degreeHistogram.Select(t => t.Count).AsChartValues(),
+                PointGeometry = null,
+                LabelPoint = t => $"Node count {t.Y}",
+            };
+            chart.Series.Add(serie);
+
+            var window = new Window
+            {
+                Content = chart,
+            };
+
+            window.ShowDialog();
+        }
+
         public async Task LoadNodeInformationAsync(string path)
         {
             var loadedNodes = await datasetLoader.LoadNodesAsync(path);
@@ -99,15 +136,20 @@ namespace MAD2.Project
         {
             Task.Run(() =>
             {
-                AverageDegree = networkDatasetAnalyser.AverageDegree(edges, nodes);
-                AverageWeightedDegree = networkDatasetAnalyser.AverageWeightedDegree(edges, nodes);
+                AverageDegree = networkDatasetAnalyser.AverageDegree(edges, nodes.Keys);
+                AverageWeightedDegree = networkDatasetAnalyser.AverageWeightedDegree(edges, nodes.Keys);
                 WeaklyConnectedComponents = networkDatasetAnalyser.WeaklyConnectedComponents(edges, nodes.Keys);
             });
         }
 
         public void CalculateModularity()
         {
-            Task.Run(() => Modularity = networkDatasetAnalyser.Modularity(adjacencyMatrix, edges));
+            Task.Run(() => Modularity = networkDatasetAnalyser.Modularity(adjacencyMatrix));
+        }
+
+        public void CalculateCommunities()
+        {
+            Task.Run(() => Communities = networkDatasetAnalyser.CommunityDetection(adjacencyMatrix, nodes.Keys));
         }
     }
 }

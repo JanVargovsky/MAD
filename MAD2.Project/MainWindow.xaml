@@ -34,6 +34,8 @@
                 <RowDefinition/>
                 <RowDefinition/>
                 <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
             </Grid.RowDefinitions>
 
             <TextBlock Grid.Row="0" Text="Number of edges"/>
@@ -54,6 +56,13 @@
             <TextBlock Grid.Row="5" Text="Modularity"/>
             <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Path=Modularity, StringFormat=F3}"/>
             <Button Grid.Row="5" Grid.Column="2" Click="CalculateModularity">Calculate</Button>
+
+            <TextBlock Grid.Row="6" Text="Degree histogram"/>
+            <Button Grid.Row="6" Grid.Column="2" Click="ShowDegreeHistogram">Show</Button>
+
+            <TextBlock Grid.Row="7" Text="Communities"/>
+            <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding Path=Communities.Count, StringFormat=F3}"/>
+            <Button Grid.Row="7" Grid.Column="2" Click="CalculateCommunities">Calculate</Button>
         </Grid>
     </DockPanel>
 </Window>
