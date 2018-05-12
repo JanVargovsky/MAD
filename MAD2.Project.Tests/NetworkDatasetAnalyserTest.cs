@@ -55,7 +55,7 @@ namespace MAD2.Project.Tests
         public void CommunityDetectionTest(int size, int expectedCommunityCount)
         {
             var (_, matrix, nodes) = GetCircularGraph(size);
-            var communities = analyser.CommunityDetection(matrix, nodes);
+            var communities = analyser.CommunityDetection(matrix, t => t, (t, w) => t = w, nodes);
 
             Assert.Equal(expectedCommunityCount, communities.Size);
         }
@@ -163,7 +163,7 @@ namespace MAD2.Project.Tests
         [ClassData(typeof(FastUnfoldingOfCommunitiesInLargeNetworksData))]
         public void CommunityDetectionWhitePaperExampleTest(Matrix<int> matrix, int[] nodes, Matrix<int> expected)
         {
-            var actualCommunityMatrix = analyser.CommunityDetection(matrix, nodes);
+            var actualCommunityMatrix = analyser.CommunityDetection(matrix, t => t, (t, w) => t = w, nodes);
 
             Assert.Equal(expected, actualCommunityMatrix);
         }

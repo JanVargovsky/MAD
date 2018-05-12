@@ -187,13 +187,13 @@ namespace MAD2.Project
         }
 
         // Fast unfolding of communities in large networks https://arxiv.org/abs/0803.0476
-        public Matrix<int> CommunityDetection(Matrix<int> matrix, ICollection<int> nodes)
+        public Matrix<T> CommunityDetection<T>(Matrix<T> matrix, Func<T, int> getWeight, Func<T, int, T> updateWeight, ICollection<int> nodes)
         {
             //var communities = nodes.Select(node => new List<int> { node }).ToList();
             var communities = Enumerable.Range(0, nodes.Count).Select(node => new List<int> { node }).ToList();
             var classes = Enumerable.Range(0, nodes.Count).ToArray(); // unique class for each node
 
-            var m = matrix.Sum() / 2;
+            var m = matrix.Sum(getWeight) / 2;
 
             double DeltaQ(int nodeI, int c)
             {
@@ -212,7 +212,7 @@ namespace MAD2.Project
                     foreach (var j in nodes)
                     {
                         if (i == j) continue;
-                        var w = matrix[i, j];
+                        var w = getWeight(matrix[i, j]);
 
                         if (w == 0) continue;
 
@@ -252,11 +252,11 @@ namespace MAD2.Project
                 {
                     var qs = new List<(double Q, double DeltaQ, double C)>();
 
-                    var qInit = Modularity(matrix, t => t, classes);
+                    var qInit = Modularity(matrix, getWeight, classes);
                     var maxDeltaQ = double.NegativeInfinity;
                     var bestC = -1;
 
-                    var neighbors = nodes.Where(k => matrix[i, k] > 0).ToArray();
+                    var neighbors = nodes.Where(k => getWeight(matrix[i, k]) > 0).ToArray();
 
                     foreach (var j in neighbors)
                     {
@@ -265,7 +265,7 @@ namespace MAD2.Project
                         // workaround because DeltaQ doesnt work
                         var backupClass = classes[i];
                         classes[i] = classes[j];
-                        var q = Modularity(matrix, t => t, classes);
+                        var q = Modularity(matrix, getWeight, classes);
                         classes[i] = backupClass;
 
                         var deltaQ = q - qInit;
@@ -295,7 +295,7 @@ namespace MAD2.Project
                 var filteredCommunities = communities.Where(t => t.Count > 0).ToArray();
                 var newNodes = filteredCommunities.Select((_, i) => i).ToArray();
                 var newCommunities = newNodes.Select(node => new List<int> { node }).ToList();
-                var newMatrix = new Matrix<int>(newNodes.Length);
+                var newMatrix = new Matrix<T>(newNodes.Length);
                 for (int c = 0; c < filteredCommunities.Length; c++)
                     filteredCommunities[c].ForEach(node => classes[node] = c);
                 var newClasses = newNodes.ToArray();
@@ -305,11 +305,13 @@ namespace MAD2.Project
                     var classI = classes[i];
                     for (int j = 0; j < matrix.Size; j++)
                     {
-                        var w = matrix[i, j];
+                        var w = getWeight(matrix[i, j]);
                         if (w == 0) continue;
                         var classJ = classes[j];
 
-                        newMatrix[classI, classJ] += w;
+                        var newWeight = getWeight(newMatrix[classI, classJ]) + w;
+                        newMatrix[classI, classJ] = updateWeight(newMatrix[classI, classJ], newWeight);
+                        //newMatrix[classI, classJ] += w;
 
                         // same group -> selfloop edge increase
                         //if (classI == classJ)

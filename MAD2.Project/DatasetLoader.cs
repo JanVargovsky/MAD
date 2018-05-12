@@ -63,7 +63,7 @@ namespace MAD2.Project
             return nodes;
         }
 
-        public Matrix<Edge> GetAdjacencyMatrix(IEnumerable<Edge> edges, IEnumerable<Node> nodes)
+        public Matrix<Edge> GetAdjacencyMatrixWithEdges(IEnumerable<Edge> edges, IEnumerable<Node> nodes)
         {
             int min = nodes.Min(t => t.Id);
             int max = nodes.Max(t => t.Id);
@@ -73,6 +73,20 @@ namespace MAD2.Project
 
             foreach (var edge in edges)
                 matrix[edge.NodeFrom, edge.NodeTo] = edge;
+
+            return matrix;
+        }
+
+        public Matrix<int> GetAdjacencyMatrix(IEnumerable<Edge> edges, IEnumerable<Node> nodes)
+        {
+            int min = nodes.Min(t => t.Id);
+            int max = nodes.Max(t => t.Id);
+            int size = max - min + 1;
+            var matrix = new Matrix<int>(size)
+                .WithIndexOffset(-min);
+
+            foreach (var edge in edges)
+                matrix[edge.NodeFrom, edge.NodeTo] = edge.Weight;
 
             return matrix;
         }

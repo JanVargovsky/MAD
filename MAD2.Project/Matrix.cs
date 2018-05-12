@@ -38,7 +38,11 @@ namespace MAD2.Project
 
         IEnumerator IEnumerable.GetEnumerator() => data.GetEnumerator();
 
-        internal string DebuggerDisplay => 
-            string.Join(Environment.NewLine, this.Batch(Size).Select(row => string.Join(" ", row.Select(t => $"{t}".PadRight(3)))));
+        internal string DebuggerDisplay => Size < 20 ?
+            string.Join(Environment.NewLine, 
+                this.Batch(Size)
+                .Select(row => string.Join(" ", row
+                    .Select(t => $"{t}".PadRight(3))))) :
+            string.Empty;
     }
 }

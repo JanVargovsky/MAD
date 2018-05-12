@@ -13,12 +13,13 @@ namespace MAD2.Project
         readonly NetworkDatasetAnalyser networkDatasetAnalyser;
         readonly List<Edge> edges = new List<Edge>();
         readonly Dictionary<int, Node> nodes = new Dictionary<int, Node>();
-        Matrix<Edge> adjacencyMatrix = new Matrix<Edge>(0);
+        Matrix<Edge> adjacencyMatrixWithEdges = new Matrix<Edge>(0);
+        Matrix<int> adjacencyMatrix = new Matrix<int>(0);
 
         public int EdgeCount => edges.Count;
         public int NodeCount => nodes.Count;
 
-        private double averageDegree;
+        private double averageDegree = double.NaN;
         public double AverageDegree
         {
             get { return averageDegree; }
@@ -29,7 +30,7 @@ namespace MAD2.Project
             }
         }
 
-        private double averageWeightedDegree;
+        private double averageWeightedDegree = double.NaN;
         public double AverageWeightedDegree
         {
             get { return averageWeightedDegree; }
@@ -51,7 +52,7 @@ namespace MAD2.Project
             }
         }
 
-        private double modularity = 0d;
+        private double modularity = double.NaN;
         public double Modularity
         {
             get { return modularity; }
@@ -62,8 +63,8 @@ namespace MAD2.Project
             }
         }
 
-        private List<List<int>> communities;
-        public List<List<int>> Communities
+        private int communities;
+        public int Communities
         {
             get { return communities; }
             set
@@ -72,7 +73,6 @@ namespace MAD2.Project
                 NotifyPropertyChanged();
             }
         }
-
 
         public MainViewModel()
         {
@@ -93,6 +93,7 @@ namespace MAD2.Project
                 nodes[node] = new Node(node, new Dictionary<string, string>());
             NotifyPropertyChanged(nameof(NodeCount));
 
+            adjacencyMatrixWithEdges = datasetLoader.GetAdjacencyMatrixWithEdges(edges, nodes.Values);
             adjacencyMatrix = datasetLoader.GetAdjacencyMatrix(edges, nodes.Values);
         }
 
@@ -144,12 +145,27 @@ namespace MAD2.Project
 
         public void CalculateModularity()
         {
-            Task.Run(() => Modularity = networkDatasetAnalyser.Modularity(adjacencyMatrix, e => e?.Weight ?? 0));
+            //Task.Run(() => Modularity = networkDatasetAnalyser.Modularity(adjacencyMatrixWithEdges, e => e?.Weight ?? 0));
+            Task.Run(() => Modularity = networkDatasetAnalyser.Modularity(adjacencyMatrix, e => e));
         }
 
         public void CalculateCommunities()
         {
-            //Task.Run(() => Communities = networkDatasetAnalyser.CommunityDetection(adjacencyMatrix, nodes.Keys));
+            Task.Run(() =>
+            {
+                //var matrix = networkDatasetAnalyser.CommunityDetection(
+                //    adjacencyMatrixWithEdges, 
+                //    (Edge e) => e.Weight,
+                //    (Edge e, int w) => e.UpdateWeight(w),
+                //    nodes.Keys);
+                var matrix = networkDatasetAnalyser.CommunityDetection(
+                    adjacencyMatrix,
+                    e => e,
+                    (e, w) => e = w,
+                    nodes.Keys);
+
+                Communities = matrix.Size;
+            });
         }
     }
 }
