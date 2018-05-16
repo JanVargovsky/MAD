@@ -36,6 +36,7 @@
                 <RowDefinition/>
                 <RowDefinition/>
                 <RowDefinition/>
+                <RowDefinition/>
             </Grid.RowDefinitions>
 
             <TextBlock Grid.Row="0" Text="Number of edges"/>
@@ -61,8 +62,11 @@
             <Button Grid.Row="6" Grid.Column="2" Click="ShowDegreeHistogram">Show</Button>
 
             <TextBlock Grid.Row="7" Text="Communities"/>
-            <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding Path=Communities.Count, StringFormat=F3}"/>
+            <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding Path=Communities}"/>
             <Button Grid.Row="7" Grid.Column="2" Click="CalculateCommunities">Calculate</Button>
+
+            <TextBlock Grid.Row="8" Text="Max id of node"/>
+            <TextBox Grid.Row="8" Grid.Column="2" Text="{Binding Path=MaxNodeId}"/>
         </Grid>
     </DockPanel>
 </Window>

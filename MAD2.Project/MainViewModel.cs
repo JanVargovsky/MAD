@@ -13,7 +13,7 @@ namespace MAD2.Project
         readonly NetworkDatasetAnalyser networkDatasetAnalyser;
         readonly List<Edge> edges = new List<Edge>();
         readonly Dictionary<int, Node> nodes = new Dictionary<int, Node>();
-        Matrix<Edge> adjacencyMatrixWithEdges = new Matrix<Edge>(0);
+        //Matrix<Edge> adjacencyMatrixWithEdges = new Matrix<Edge>(0);
         Matrix<int> adjacencyMatrix = new Matrix<int>(0);
 
         public int EdgeCount => edges.Count;
@@ -63,7 +63,7 @@ namespace MAD2.Project
             }
         }
 
-        private int communities;
+        private int communities = -1;
         public int Communities
         {
             get { return communities; }
@@ -73,6 +73,18 @@ namespace MAD2.Project
                 NotifyPropertyChanged();
             }
         }
+
+        private int maxNodeId = int.MaxValue;
+        public int MaxNodeId
+        {
+            get { return maxNodeId; }
+            set
+            {
+                maxNodeId = value;
+                NotifyPropertyChanged();
+            }
+        }
+
 
         public MainViewModel()
         {
@@ -84,6 +96,8 @@ namespace MAD2.Project
         {
             edges.Clear();
             var loadedEdges = await datasetLoader.LoadDatasetAsync(path);
+            loadedEdges = datasetLoader.NormalizeIndexes(loadedEdges);
+            loadedEdges = loadedEdges.Where(t => t.NodeFrom < MaxNodeId && t.NodeTo < MaxNodeId).ToList();
             edges.AddRange(loadedEdges);
             NotifyPropertyChanged(nameof(EdgeCount));
 
@@ -93,7 +107,7 @@ namespace MAD2.Project
                 nodes[node] = new Node(node, new Dictionary<string, string>());
             NotifyPropertyChanged(nameof(NodeCount));
 
-            adjacencyMatrixWithEdges = datasetLoader.GetAdjacencyMatrixWithEdges(edges, nodes.Values);
+            //adjacencyMatrixWithEdges = datasetLoader.GetAdjacencyMatrixWithEdges(edges, nodes.Values);
             adjacencyMatrix = datasetLoader.GetAdjacencyMatrix(edges, nodes.Values);
         }
 

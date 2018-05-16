@@ -52,6 +52,25 @@ namespace MAD2.Project
             }
         }
 
+        public List<Edge> NormalizeIndexes(List<Edge> edges, int start = 0)
+        {
+            int id = start;
+            var indexes = new Dictionary<int, int>(); // <old, new>
+            var result = new List<Edge>();
+
+            foreach (var edge in edges)
+            {
+                if (!indexes.TryGetValue(edge.NodeFrom, out var nodeFrom))
+                    nodeFrom = indexes[edge.NodeFrom] = id++;
+                if (!indexes.TryGetValue(edge.NodeTo, out var nodeTo))
+                    nodeTo = indexes[edge.NodeTo] = id++;
+
+                result.Add(new Edge(nodeFrom, nodeTo, edge.Weight));
+            }
+
+            return result;
+        }
+
         public IEnumerable<int> GetNodes(IEnumerable<Edge> edges)
         {
             var nodes = new HashSet<int>();
