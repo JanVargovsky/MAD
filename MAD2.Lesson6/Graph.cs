@@ -32,5 +32,12 @@ namespace MAD2.Lesson6
 
         public int From { get; set; }
         public int To { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            return obj is Edge edge &&
+                   From == edge.From &&
+                   To == edge.To;
+        }
     }
 }
