@@ -190,8 +190,10 @@ namespace MAD2.Project
         public Matrix<T> CommunityDetection<T>(Matrix<T> matrix, Func<T, int> getWeight, Func<T, int, T> updateWeight, ICollection<int> nodes)
         {
             //var communities = nodes.Select(node => new List<int> { node }).ToList();
-            var communities = Enumerable.Range(0, nodes.Count).Select(node => new List<int> { node }).ToList();
-            var classes = Enumerable.Range(0, nodes.Count).ToArray(); // unique class for each node
+            var communities = Enumerable.Range(0, matrix.Size).Select(node => new List<int>()).ToList();
+            nodes.ForEach(n => communities[n].Add(n));
+            //var classes = Enumerable.Range(0, nodes.Count).ToArray();
+            var classes = Enumerable.Range(0, matrix.Size).ToArray();
 
             var m = matrix.Sum(getWeight) / 2;
 
