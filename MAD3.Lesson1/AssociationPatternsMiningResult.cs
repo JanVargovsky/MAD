@@ -12,16 +12,21 @@ namespace MAD3.Lesson1
 
         public int TransactionsCount => _transactions.Count;
         public float MinSupport { get; }
+        public float MinConfidence { get; }
+
         public int FrequentItemsetsCount => Patterns.Count;
 
         // <Pattern, Transactions>
         public Dictionary<HashSet<int>, HashSet<int>> Patterns { get; set; }
+        public List<Rule> Rules { get; set; }
 
-        public AssociationPatternsMiningResult(IList<int[]> transactions, float minSupport)
+        public AssociationPatternsMiningResult(IList<int[]> transactions, float minSupport, float minConfidence)
         {
             _transactions = transactions;
             MinSupport = minSupport;
+            MinConfidence = minConfidence;
             Patterns = new Dictionary<HashSet<int>, HashSet<int>>(HashSet<int>.CreateSetComparer());
+            Rules = new List<Rule>();
         }
 
         public float Support<T>(ICollection<T> transactions) => Support(transactions.Count);
@@ -35,7 +40,46 @@ namespace MAD3.Lesson1
             return itemsets;
         }
 
-        public IEnumerable<ConfidenceResult> Confidence(KeyValuePair<HashSet<int>, HashSet<int>> pattern)
+        public IEnumerable<Rule> GetRules(int k)
+        {
+            var rules = Rules.Where(t => t.X.Count + 1 == k)
+                .OrderByDescending(t => t.Confidence);
+            return rules;
+        }
+
+        public void CalculateRules()
+        {
+            foreach (var pattern in Patterns)
+            {
+                if (pattern.Key.Count < 2) continue;
+
+                foreach (var rule in GetRules(pattern.Key, pattern.Value.Count).ToList())
+                {
+                    if (rule.Confidence >= MinConfidence)
+                        Rules.Add(rule);
+                }
+            }
+        }
+
+        IEnumerable<Rule> GetRules(HashSet<int> pattern, int transactionCount)
+        {
+            var suppXY = Support(transactionCount);
+            var values = pattern.ToArray();
+            for (int i = 0; i < pattern.Count; i++)
+            {
+                var y = values[i];
+                var x = new HashSet<int>(values);
+                x.Remove(y);
+
+                var xTransactions = Patterns[x];
+                float suppX = Support(xTransactions);
+                var confidence = suppXY / suppX;
+                yield return new Rule(x, y, confidence);
+            }
+        }
+
+        [Obsolete]
+        IEnumerable<ConfidenceResult> Confidence(KeyValuePair<HashSet<int>, HashSet<int>> pattern)
         {
             // cant generate any rule from set with one element
             if (pattern.Key.Count < 2)
@@ -107,6 +151,20 @@ namespace MAD3.Lesson1
         public float Confidence { get; }
 
         public ConfidenceResult(HashSet<int> x, HashSet<int> y, float confidence)
+        {
+            X = x;
+            Y = y;
+            Confidence = confidence;
+        }
+    }
+
+    class Rule
+    {
+        public HashSet<int> X { get; }
+        public int Y { get; }
+        public float Confidence { get; }
+
+        public Rule(HashSet<int> x, int y, float confidence)
         {
             X = x;
             Y = y;

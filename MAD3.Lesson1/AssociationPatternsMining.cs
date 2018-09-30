@@ -13,9 +13,9 @@ namespace MAD3.Lesson1
             _ignorePatternsWith100 = ignorePatternsWith100;
         }
 
-        public AssociationPatternsMiningResult VerticalCountingMethods(IList<int[]> data, float minSupport)
+        public AssociationPatternsMiningResult VerticalCountingMethods(IList<int[]> data, float minSupport, float minConfidence)
         {
-            var result = new AssociationPatternsMiningResult(data, minSupport);
+            var result = new AssociationPatternsMiningResult(data, minSupport, minConfidence);
 
             bool IsSupportOK(HashSet<int> rows)
             {
@@ -47,7 +47,9 @@ namespace MAD3.Lesson1
                     }
                 }
 
-                return F1.ToDictionary(
+                return F1
+                    .Where(t => IsSupportOK(t.Value))
+                    .ToDictionary(
                     t => new HashSet<int> { t.Key }, 
                     t => t.Value);
             }
@@ -80,6 +82,7 @@ namespace MAD3.Lesson1
                 F = newF;
                 k++;
             }
+            result.CalculateRules();
             return result;
         }
     }

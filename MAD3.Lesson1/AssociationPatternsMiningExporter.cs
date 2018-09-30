@@ -16,8 +16,10 @@ namespace MAD3.Lesson1
             sb
                 .AppendLine($"{"Dataset:".PadRight(Length)}{dataset}")
                 .AppendLine($"{"Transactions:".PadRight(Length)}{result.TransactionsCount}")
-                .AppendLine($"{"Min. Support:".PadRight(Length)}{result.MinSupport}")
-                .AppendLine($"{"Freq. Itemsets:".PadRight(Length)}{result.FrequentItemsetsCount}");
+                .AppendLine($"{"Min. Support:".PadRight(Length)}{result.MinSupport:f3}")
+                .AppendLine($"{"Freq. Itemsets:".PadRight(Length)}{result.FrequentItemsetsCount}")
+                .AppendLine($"{"Min. Confidence:".PadRight(Length)}{result.MinConfidence:f3}")
+                .AppendLine($"{"Rules:".PadRight(Length)}{result.Rules.Count}");
 
             int length = 1;
             while (true)
@@ -27,14 +29,14 @@ namespace MAD3.Lesson1
                     {
                         Itemsets = $"[{string.Join(", ", t.Itemset)}]",
                         t.Support
-                    }).ToList();
+                    }).ToArray();
 
                 if (!frequentItemsets.Any())
                     break;
 
                 sb
                     .AppendLine()
-                    .AppendLine($"length = {length}");
+                    .AppendLine($"length = {length} sup");
 
                 
                 int minPadding = frequentItemsets.Max(t => t.Itemsets.Length);
@@ -50,6 +52,36 @@ namespace MAD3.Lesson1
                 length++;
             }
 
+            length = 2;
+            while (true)
+            {
+                var rules = result.GetRules(length)
+                    .Select(t => new
+                    {
+                        Rule = $"[{string.Join(", ", t.X.OrderBy(tt => tt))}]->{t.Y}",
+                        t.Confidence
+                    }).ToArray();
+
+                if (!rules.Any())
+                    break;
+
+                sb
+                    .AppendLine()
+                    .AppendLine($"length = {length} conf");
+
+                int minPadding = rules.Max(t => t.Rule.Length);
+
+                foreach (var item in rules.TakeWhile((_, index) => index < 10))
+                {
+                    sb
+                        .Append(item.Rule.PadLeft(minPadding))
+                        .Append("   ")
+                        .Append(item.Confidence.ToString("f3"))
+                        .AppendLine();
+                }
+                length++;
+            }
+
             return sb.ToString();
         }
 
@@ -59,7 +91,7 @@ namespace MAD3.Lesson1
         public void ExportToConsole(string dataset, AssociationPatternsMiningResult result)
             => Console.WriteLine(ExportToString(dataset, result));
 
-        public string ExportToString(IEnumerable<ConfidenceResult> confidences)
+        public string ExportToString(IEnumerable<Rule> confidences)
         {
             var sb = new StringBuilder();
 
@@ -81,7 +113,7 @@ namespace MAD3.Lesson1
             return sb.ToString();
         }
 
-        public void ExportToConsole(IEnumerable<ConfidenceResult> confidences)
+        public void ExportToConsole(IEnumerable<Rule> confidences)
             => Console.WriteLine(ExportToString(confidences));
     }
 }

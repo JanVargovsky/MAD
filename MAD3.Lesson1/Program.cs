@@ -42,7 +42,6 @@ namespace MAD3.Lesson1
             return result;
         }
 
-
         Dictionary<int, Dictionary<HashSet<int>, HashSet<int>>> AssociationPatternMining_VerticalCountingMethods(IList<int[]> data, float minSupport)
         {
             float CalculateSupport(HashSet<int> rows) => rows.Count / (float)data.Count;
@@ -115,24 +114,19 @@ namespace MAD3.Lesson1
 
         async Task Task2_3Async()
         {
-            (string filename, float minSupport) dataset1 = ("itemsets_test.dat", 0.2f);
-            (string filename, float minSupport) dataset2 = ("chess.dat", 0.9f);
-            (string filename, float minSupport) dataset3 = ("mushroom.dat", 0.7f);
-            (string filename, float minSupport) dataset4 = ("connect.dat", 0.98f);
-            (string filename, float minSupport) dataset5 = ("T10I4D100K.dat", 0.006f);
+            (string filename, float minSupport, float minConfidence) dataset1 = ("itemsets_test.dat", 0.2f, 0.5f);
+            (string filename, float minSupport, float minConfidence) dataset2 = ("chess.dat", 0.95f, 0.5f);
+            (string filename, float minSupport, float minConfidence) dataset3 = ("mushroom.dat", 0.7f, 0.5f);
+            (string filename, float minSupport, float minConfidence) dataset4 = ("connect.dat", 0.98f, 0.7f);
+            (string filename, float minSupport, float minConfidence) dataset5 = ("T10I4D100K.dat", 0.006f, 0.9f);
 
             var associationPatternMining = new AssociationPatternsMining(false);
             var exporter = new AssociationPatternsMiningExporter();
 
-            var dataset = dataset5;
+            var dataset = dataset1;
             var data = await LoadDatasetAsync(dataset.filename);
-            var result = associationPatternMining.VerticalCountingMethods(data, dataset.minSupport);
+            var result = associationPatternMining.VerticalCountingMethods(data, dataset.minSupport, dataset.minConfidence);
             exporter.ExportToConsole(dataset.filename, result);
-            //await exporter.ExportToFileAsync(dataset.filename, result, dataset.filename + "_result");
-
-            var pattern = result.Patterns.Last();
-            var confidences = result.Confidence(pattern);
-            exporter.ExportToConsole(confidences);
         }
 
         static async Task Main(string[] args)
