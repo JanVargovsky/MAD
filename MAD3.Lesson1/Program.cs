@@ -1,6 +1,7 @@
 ﻿using Accord.Math;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -134,7 +135,10 @@ namespace MAD3.Lesson1
             var p = new Program();
             //p.Task1();
 
+            Stopwatch sw = Stopwatch.StartNew();
             await p.Task2_3Async();
+            sw.Stop();
+            Console.WriteLine($"Done in {sw.Elapsed}");
         }
     }
 }
