@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Accord.Math;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -40,13 +41,21 @@ namespace MAD3.Lesson2
                 return new EntropyKey(indexes);
             }
 
+            public static EntropyKey CreateFrom(GridBlock[] blocks, IDataset dataset, int row)
+            {
+                var indexes = new int[blocks.Length];
+                for (int i = 0; i < indexes.Length; i++)
+                    indexes[i] = blocks[i].GetBlock(dataset[row, i]);
+
+                return new EntropyKey(indexes);
+            }
+
             public override string ToString() => $"[{string.Join(", ", Indexes)}]";
         }
 
-        const int Base = 2;
-        double Entropy(double pi) => pi * Math.Log(pi, Base) + (1 - pi) * Math.Log(1 - pi, Base);
+        double Entropy(double pi) => pi * Math.Log(pi, 2);
 
-        public double Entropy(Dataset dataset, int m)
+        public double Entropy(IDataset dataset, int m)
         {
             var gridBlocks = new GridBlock[dataset.NumberOfAttributes];
             for (int i = 0; i < gridBlocks.Length; i++)
@@ -54,9 +63,9 @@ namespace MAD3.Lesson2
 
             var grid = new Dictionary<EntropyKey, uint>();
 
-            foreach (var item in dataset.Data)
+            for (int row = 0; row < dataset.Count; row++)
             {
-                var key = EntropyKey.CreateFrom(item, gridBlocks);
+                var key = EntropyKey.CreateFrom(gridBlocks, dataset, row);
 
                 if (!grid.ContainsKey(key))
                     grid[key] = 0;
@@ -64,16 +73,55 @@ namespace MAD3.Lesson2
                 grid[key]++;
             }
 
-            double e = 0d;
+            double entropy = 0d;
 
             foreach (var item in grid.Values)
             {
-                var pi = item / (double)dataset.Data.Count;
-                var ee = Entropy(pi);
-                e += ee;
+                var pi = item / (double)dataset.Count;
+                var e = Entropy(pi);
+                entropy += e;
             }
 
-            return e;
+            return -entropy;
+        }
+
+        public MinimalEntropyResult GetMinimalEntropy(ColumnDataset dataset, int m)
+        {
+            double originalEntropy = Entropy(dataset, m);
+            double minEntropy = double.MaxValue;
+            ColumnDataset minDataset = null;
+
+            foreach (var columns in Combinatorics.Combinations(dataset.Columns))
+            {
+                var newDataset = new ColumnDataset(columns);
+                var newEntropy = Entropy(newDataset, m);
+
+                //Console.WriteLine(entropy);
+                if (newEntropy < minEntropy ||
+                    (newEntropy == minEntropy && newDataset.NumberOfAttributes < minDataset.NumberOfAttributes))
+                {
+                    minEntropy = newEntropy;
+                    minDataset = newDataset;
+                }
+            }
+
+            return new MinimalEntropyResult(dataset, originalEntropy, minDataset, minEntropy);
+        }
+    }
+
+    public class MinimalEntropyResult
+    {
+        public IDataset OriginalDataset { get; }
+        public double OriginalDatasetEntropy { get; }
+        public IDataset MinimizedDataset { get; }
+        public double MinimizedDatasetEntropy { get; }
+
+        public MinimalEntropyResult(IDataset originalDataset, double originalDatasetEntropy, IDataset minimizedDataset, double minimizedDatasetEntropy)
+        {
+            OriginalDataset = originalDataset;
+            OriginalDatasetEntropy = originalDatasetEntropy;
+            MinimizedDataset = minimizedDataset;
+            MinimizedDatasetEntropy = minimizedDatasetEntropy;
         }
     }
 }
