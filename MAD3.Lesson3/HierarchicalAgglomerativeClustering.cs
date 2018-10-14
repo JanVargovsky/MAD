@@ -4,12 +4,12 @@ using System.Linq;
 
 namespace MAD3.Lesson3
 {
-    public class ClustereringConditionArgs
+    public class ClusteringConditionArgs
     {
         public int Clusters { get; }
         public double Height { get; }
 
-        public ClustereringConditionArgs(int numberOfClusters, double height)
+        public ClusteringConditionArgs(int numberOfClusters, double height)
         {
             Clusters = numberOfClusters;
             Height = height;
@@ -18,13 +18,6 @@ namespace MAD3.Lesson3
 
     public class HierarchicalAgglomerativeClustering
     {
-        /*
-Cílem bude implementovat dvě varianty aglomerativního shlukování a to single a complete linkage.
-Obě metody vychází z matice vzdáleností.
-Cílem bude provést shlukování, které se zastaví buď při vhodné příležitosti, nebo po kompletním shlukování.
-Při kompletním shlukování sestupte dendrogramu shluků a nalezněte ty správné shluky
-        */
-
         (DistanceMatrix, List<List<int>>) Iteration(DistanceMatrix distanceMatrix, List<List<int>> clusters, Func<double, double, double> takeFunc)
         {
             var newDistanceMatrix = new DistanceMatrix(distanceMatrix.Size - 1);
@@ -83,25 +76,25 @@ Při kompletním shlukování sestupte dendrogramu shluků a nalezněte ty sprá
                 .Select(t => new List<int> { t })
                 .ToList();
 
-        ClustereringConditionArgs Create(DistanceMatrix distanceMatrix, List<List<int>> clusters)
+        ClusteringConditionArgs CreateConditionArgs(DistanceMatrix distanceMatrix, List<List<int>> clusters)
         {
             var (row, col) = distanceMatrix.Min();
             var height = distanceMatrix[row, col];
-            return new ClustereringConditionArgs(clusters.Count, height);
+            return new ClusteringConditionArgs(clusters.Count, height);
         }
 
-        public List<List<int>> SingleLinkage(DistanceMatrix distanceMatrix, Func<ClustereringConditionArgs, bool> endCondition)
+        public List<List<int>> SingleLinkage(DistanceMatrix distanceMatrix, Func<ClusteringConditionArgs, bool> endCondition)
         {
             var clusters = CreateClusters(distanceMatrix.Size);
-            while (distanceMatrix.Size > 1 && endCondition(Create(distanceMatrix, clusters)))
+            while (distanceMatrix.Size > 1 && endCondition(CreateConditionArgs(distanceMatrix, clusters)))
                 (distanceMatrix, clusters) = SingleLinkageIteration(distanceMatrix, clusters);
             return clusters;
         }
 
-        public List<List<int>> CompleteLinkage(DistanceMatrix distanceMatrix, Func<ClustereringConditionArgs, bool> endCondition)
+        public List<List<int>> CompleteLinkage(DistanceMatrix distanceMatrix, Func<ClusteringConditionArgs, bool> endCondition)
         {
             var clusters = CreateClusters(distanceMatrix.Size);
-            while (distanceMatrix.Size > 1 && endCondition(Create(distanceMatrix, clusters)))
+            while (distanceMatrix.Size > 1 && endCondition(CreateConditionArgs(distanceMatrix, clusters)))
                 (distanceMatrix, clusters) = CompleteLinkageIteration(distanceMatrix, clusters);
             return clusters;
         }

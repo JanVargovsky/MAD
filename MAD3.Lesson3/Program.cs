@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.Console;
+using static System.ExtendedConsole;
 
 namespace MAD3.Lesson3
 {
@@ -44,7 +47,7 @@ namespace MAD3.Lesson3
             return distanceMatrix;
         }
 
-        static async Task ExportAsync(string filename, List<double[]> dataset, List<List<int>> clusters)
+        async Task ExportAsync(string filename, List<double[]> dataset, List<List<int>> clusters)
         {
             string path = Path.Combine("../../../../MAD3.Lesson3.Visualization/Data", filename);
             using (var sw = new StreamWriter(path))
@@ -63,34 +66,37 @@ namespace MAD3.Lesson3
         static async Task Main(string[] args)
         {
             Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
-            (string name, int clusters) dataset1 = ("clusters3.csv", 3);
-            (string name, int clusters) dataset2 = ("clusters5.csv", 5);
-            (string name, int clusters) dataset3 = ("clusters5n.csv", 5);
-            (string name, int clusters) dataset4 = ("annulus.csv", 2);
-            (string name, int clusters) dataset5 = ("boxes.csv", 5);
+            (string filename, int clusters) dataset1 = ("clusters3.csv", 3);
+            (string filename, int clusters) dataset2 = ("clusters5.csv", 5);
+            (string filename, int clusters) dataset3 = ("clusters5n.csv", 5);
+            (string filename, int clusters) dataset4 = ("annulus.csv", 2);
+            (string filename, int clusters) dataset5 = ("boxes.csv", 5);
             var datasets = new[] { dataset1, dataset2, dataset3, dataset4, dataset5 };
 
             var p = new Program();
             var clustering = new HierarchicalAgglomerativeClustering();
-            foreach (var dataset in datasets)
+            foreach (var (filename, clusters) in datasets)
             {
-                Console.WriteLine($"Dataset: {dataset.name}");
-                Console.WriteLine($"Expected clusters: {dataset.clusters}");
-                var data = await p.LoadCSVAsync(dataset.name);
+                WriteLine($"Dataset: {filename}");
+                WriteLine($"Expected clusters: {clusters}");
+                var data = await p.LoadCSVAsync(filename);
                 var distanceMatrix = p.GetDistanceMatrix(data, p.EuclideanDistance);
 
-                var singleLinkage = clustering.SingleLinkage(distanceMatrix, t => t.Clusters > dataset.clusters);
-                Console.WriteLine("Single linkage");
-                Console.WriteLine(string.Join(", ", singleLinkage.Select(t => t.Count)));
+                var sw = Stopwatch.StartNew();
+                var singleLinkage = clustering.SingleLinkage(distanceMatrix, t => t.Clusters > clusters);
+                sw.Stop();
+                WriteLine(ConsoleColor.Yellow, $"Single linkage [{sw.ElapsedMilliseconds}ms]");
+                WriteLine(ConsoleColor.Green, string.Join(", ", singleLinkage.Select(t => t.Count)));
 
-                var completeLinkage = clustering.CompleteLinkage(distanceMatrix, t => t.Clusters > dataset.clusters);
-                Console.WriteLine("Complete linkage");
-                Console.WriteLine(string.Join(", ", completeLinkage.Select(t => t.Count)));
+                sw = Stopwatch.StartNew();
+                var completeLinkage = clustering.CompleteLinkage(distanceMatrix, t => t.Clusters > clusters);
+                sw.Stop();
+                WriteLine(ConsoleColor.Yellow, $"Complete linkage [{sw.ElapsedMilliseconds}ms]");
+                WriteLine(ConsoleColor.Green, string.Join(", ", completeLinkage.Select(t => t.Count)));
 
                 await Task.WhenAll(
-                    ExportAsync($"SingleLinkage-{dataset.name}", data, singleLinkage),
-                    ExportAsync($"CompleteLinkage-{dataset.name}", data, completeLinkage)
-                    );
+                    p.ExportAsync($"SingleLinkage-{filename}", data, singleLinkage),
+                    p.ExportAsync($"CompleteLinkage-{filename}", data, completeLinkage));
             }
         }
     }
