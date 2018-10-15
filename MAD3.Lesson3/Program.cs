@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using static System.Console;
@@ -15,7 +16,8 @@ namespace MAD3.Lesson3
     {
         async Task<List<double[]>> LoadCSVAsync(string filename)
         {
-            string path = Path.Combine("../../../../Datasets/", filename);
+            var root = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            string path = Path.Combine(root, "../../../../Datasets/", filename);
             var lines = await File.ReadAllLinesAsync(path);
             var result = new List<double[]>();
             foreach (var line in lines)
